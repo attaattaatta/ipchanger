@@ -21,7 +21,7 @@ read answer;
 if [ "$answer" != "${answer#[Yy]}" ] ;then
 
         # check ISP4 panel
-        if [ -f "/usr/local/ispmgr/bin/ispmgr" ]; then printf "$R_C ISP 4 panel detected. Use your hands. Aborting.$N_C" && ISP5_RTG=0 && sleep 2s && exit 1; fi;
+        if [ -f "/usr/local/ispmgr/bin/ispmgr" ]; then printf "$R_C ISP 4 panel detected. Use your hands. Aborting.$N_C"; ISP5_RTG=0; sleep 2s; exit 1; fi;
 
         # vars
         ISP5_PANEL_FILE="/usr/local/mgr5/sbin/mgrctl";
@@ -34,39 +34,39 @@ if [ "$answer" != "${answer#[Yy]}" ] ;then
         if [ -f "$ISP5_PANEL_FILE" ]; then shopt -s nocasematch;
                 case "$ISP5_LITE_LIC" in
                         *busines*)
-                                printf "\n$R_C Business panel license detected. Use your hands. Aborting.$N_C\n" && ISP5_RTG=0 && sleep 2s && exit 1 ;;
+                                printf "\n$R_C Business panel license detected. Use your hands. Aborting.$N_C\n"; ISP5_RTG=0; sleep 2s; exit 1 ;;
                         *lite*)
-                                printf "\n$G_C Lite panel license detected.\n  Backing up db file$N_C\n" && ISP5_RTG=1 && sleep 2s &&
+                                printf "\n$G_C Lite panel license detected.\n  Backing up db file$N_C\n"; ISP5_RTG=1; sleep 2s;
 
-                                ISP5_LITE_MAIN_DB_FILE="/usr/local/mgr5/etc/ispmgr.db" &&
+                                ISP5_LITE_MAIN_DB_FILE="/usr/local/mgr5/etc/ispmgr.db";
 
-                                \cp -f $ISP5_LITE_MAIN_DB_FILE $ISP5_LITE_MAIN_DB_FILE.$TSTAMP &&
+                                \cp -f $ISP5_LITE_MAIN_DB_FILE $ISP5_LITE_MAIN_DB_FILE.$TSTAMP;
                                 \cp -f $ISP5_LITE_MAIN_DB_FILE /root/support/$TSTAMP/
-                                printf "\n$G_C  Backup file - $ISP5_LITE_MAIN_DB_FILE.$TSTAMP (and also in /root/support/$TSTAMP/)$N_C\n" &&
+                                printf "\n$G_C  Backup file - $ISP5_LITE_MAIN_DB_FILE.$TSTAMP (and also in /root/support/$TSTAMP/)$N_C\n";
 
-                                printf "\n$G_C  Setting ihttpd listen all ips$N_C\n\n" &&
+                                printf "\n$G_C  Setting ihttpd listen all ips$N_C\n\n";
                                 $ISP5_PANEL_FILE -m core ihttpd.edit ip=any elid=$1 sok=ok
 
-                                printf "\n$G_C  Adding new ip - $2$N_C\n\n" &&
-                                $ISP5_PANEL_FILE -m ispmgr ipaddrlist.edit name=$2 sok=ok &&
+                                printf "\n$G_C  Adding new ip - $2$N_C\n\n";
+                                $ISP5_PANEL_FILE -m ispmgr ipaddrlist.edit name=$2 sok=ok;
 
-                                printf "\n$G_C  Updating db file (changing $1 with $2)$N_C\n" &&
+                                printf "\n$G_C  Updating db file (changing $1 with $2)$N_C\n";
 
-                                sqlite3_exist=$(if ! sqlite3 -v; then apt -y install sqlite || yum -y install sqlite; fi > /dev/null 2>&1) &&
-                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update webdomain_ipaddr set value='$2' where value='$1';" &&
-                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update emaildomain set ip='$2' where ip='$1';" &&
-                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update domain_auto set name=replace(name, '$1', '$2') where name like '%$1%';" &&
-                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update global_index set field_value='$2' where field_value='$1';" &&
+                                sqlite3_exist=$(if ! sqlite3 -v; then apt -y install sqlite || yum -y install sqlite; fi > /dev/null 2>&1);
+                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update webdomain_ipaddr set value='$2' where value='$1';";
+                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update emaildomain set ip='$2' where ip='$1';";
+                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update domain_auto set name=replace(name, '$1', '$2') where name like '%$1%';";
+                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update global_index set field_value='$2' where field_value='$1';";
 
-				\rm -rf /usr/local/mgr5/var/.xmlcache/* &&
-				\rm -f /usr/local/mgr5/etc/ispmgr.lic /usr/local/mgr5/etc/ispmgr.lic.lock /usr/local/mgr5/var/.db.cache.* &&
+				\rm -rf /usr/local/mgr5/var/.xmlcache/*;
+				\rm -f /usr/local/mgr5/etc/ispmgr.lic /usr/local/mgr5/etc/ispmgr.lic.lock /usr/local/mgr5/var/.db.cache.*;
 
-                                printf "\n$G_C  Update completed. Removing old ip - $1$N_C\n" &&
-                                $ISP5_PANEL_FILE -m ispmgr ipaddrlist.delete elid=$1 sok=ok &&
+                                printf "\n$G_C  Update completed. Removing old ip - $1$N_C\n";
+                                $ISP5_PANEL_FILE -m ispmgr ipaddrlist.delete elid=$1 sok=ok;
                                 $ISP5_PANEL_FILE -m ispmgr exit
                                 ;;
                         *)
-                                printf "\n$R_C  Unknown panel license detected. Version: $ISP5_LITE_LIC. Aborting.$N_C\n" && ISP5_RTG=0 && sleep 5s && exit 1 ;;
+                                printf "\n$R_C  Unknown panel license detected. Version: $ISP5_LITE_LIC. Aborting.$N_C\n"; ISP5_RTG=0; sleep 5s; exit 1 ;;
                 esac;
 
         else printf "$R_C  No ISP5 panel detected.$N_C";
@@ -78,7 +78,7 @@ if [ "$answer" != "${answer#[Yy]}" ] ;then
 	\cp -Rf /etc/sysconfig/network* /root/support/$TSTAMP/;
 
         printf "\n$G_C  Current network settings:$N_C\n\n";
-        echo "$(ip a)" && echo && echo "$(ip r)";
+        echo "$(ip a)"; echo; echo "$(ip r)";
 
         printf "\n$G_C  Starting ip change systemwide$N_C\n";
         grep -RIil $1 /var/named* | xargs sed -i "s@$1@$2@gi";
