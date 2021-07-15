@@ -35,7 +35,7 @@ if [ "$answer" != "${answer#[Yy]}" ] ;then
                 case "$ISP5_LITE_LIC" in
                         *busines*)
                                 printf "\n$R_C Business panel license detected. Use your hands. Aborting.$N_C\n"; ISP5_RTG=0; sleep 2s; exit 1 ;;
-                        lite | pro | host)
+                        *lite*|*pro*|*host*)
                                 printf "\n$G_C Lite panel license detected.\n  Backing up db file$N_C\n"; ISP5_RTG=1; sleep 2s;
 
                                 ISP5_LITE_MAIN_DB_FILE="/usr/local/mgr5/etc/ispmgr.db";
