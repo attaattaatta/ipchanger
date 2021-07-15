@@ -35,7 +35,7 @@ if [ "$answer" != "${answer#[Yy]}" ] ;then
                 case "$ISP5_LITE_LIC" in
                         *busines*)
                                 printf "\n$R_C Business panel license detected. Use your hands. Aborting.$N_C\n"; ISP5_RTG=0; sleep 2s; exit 1 ;;
-                        *lite*)
+                        lite | pro | host)
                                 printf "\n$G_C Lite panel license detected.\n  Backing up db file$N_C\n"; ISP5_RTG=1; sleep 2s;
 
                                 ISP5_LITE_MAIN_DB_FILE="/usr/local/mgr5/etc/ispmgr.db";
@@ -64,7 +64,7 @@ if [ "$answer" != "${answer#[Yy]}" ] ;then
                                 printf "\n$G_C  Update completed. Removing old ip - $1$N_C\n";
                                 $ISP5_PANEL_FILE -m ispmgr ipaddrlist.delete elid=$1 sok=ok;
                                 $ISP5_PANEL_FILE -m ispmgr exit
-                                ;;
+                                ;;	
                         *)
                                 printf "\n$R_C  Unknown panel license detected. Version: $ISP5_LITE_LIC. Aborting.$N_C\n"; ISP5_RTG=0; sleep 5s; exit 1 ;;
                 esac;
