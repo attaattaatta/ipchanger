@@ -13,20 +13,23 @@ N_C="\033[0m";
 
 SELF_NAME=$(basename "$0");
 
-if [ -z "${1}" ]; then printf "$R_C Old ip not set up$N_C\n  Usage $SELF_NAME old_ip new_ip\n"; exit 1; else printf "$R_C Old ip - $1$N_C\n"; fi;
-if [ -z "${2}" ]; then printf "$G_C New ip not set up$N_C\n  Usage $SELF_NAME old_ip new_ip\n"; exit 1; else printf "$G_C New ip - $2$N_C\n"; fi;
+if [[ -z "${1}" ]]; then printf "$R_C Old ip not set up$N_C\n  Usage $SELF_NAME old_ip new_ip\n"; exit 1; else printf "$R_C Old ip - $1$N_C\n"; fi;
+if [[ -z "${2}" ]]; then printf "$G_C New ip not set up$N_C\n  Usage $SELF_NAME old_ip new_ip\n"; exit 1; else printf "$G_C New ip - $2$N_C\n"; fi;
 
 echo -n "  DO NOT delete $1 in Billing now ! Did you add $2 in the Billing ? [y/n] ";
 read answer;
-if [ "$answer" != "${answer#[Yy]}" ] ;then
+if [[ "$answer" != "${answer#[Yy]}" ]] ; then
 
         # check ISP4 panel
-        if [ -f "/usr/local/ispmgr/bin/ispmgr" ]; then printf "$R_C ISP 4 panel detected. Use your hands. Aborting.$N_C"; ISP5_RTG=0; sleep 2s; exit 1; fi;
+        if [[ -f "/usr/local/ispmgr/bin/ispmgr" ]]; then printf "$R_C ISP 4 panel detected. Use your hands. Aborting.$N_C"; ISP5_RTG=0; sleep 2s; exit 1; fi;
 
         # vars
+	if [[ -f "/usr/local/mgr5/sbin/mgrctl" ]]
+	then
         ISP5_PANEL_FILE="/usr/local/mgr5/sbin/mgrctl";
 	ISP5_LITE_ELID=$(/usr/local/mgr5/sbin/mgrctl -m ispmgr license.info | sed -n -e "s@^.*licid=@@p");
         ISP5_LITE_LIC=$(/usr/local/mgr5/sbin/mgrctl -m ispmgr license.info | sed -n -e "s@^.*panel_name=@@p");
+	fi
         TSTAMP=$(echo "$(date +%d-%m-%Y-%H-%M-%Z)")
 
         mkdir -p /root/support/$TSTAMP
@@ -81,9 +84,9 @@ if [ "$answer" != "${answer#[Yy]}" ] ;then
         echo "$(ip a)"; echo; echo "$(ip r)";
 
         printf "\n$G_C  Starting ip change systemwide$N_C\n";
-        grep -RIil $1 /var/named* | xargs sed -i "s@$1@$2@gi";
-        grep -RIil $1 /var/lib/powerdns* | xargs sed -i "s@$1@$2@gi";
-        grep -RIil $1 /etc* | xargs sed -i "s@$1@$2@gi";
+	grep -RIil --exclude={*.run*,*random*} $1 /var/named* | xargs sed -i "s@$1@$2@gi";
+	grep -RIil --exclude={*.run*,*random*} $1 /var/lib/powerdns* | xargs sed -i "s@$1@$2@gi";
+	grep -RIil --exclude={*.run*,*random*} $1 /etc* | xargs sed -i "s@$1@$2@gi";
 
 	printf "\n$G_C  $1 -> $2 changed.$N_C\n";
 
