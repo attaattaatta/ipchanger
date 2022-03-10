@@ -84,9 +84,9 @@ if [[ "$answer" != "${answer#[Yy]}" ]] ; then
         echo "$(ip a)"; echo; echo "$(ip r)";
 
         printf "\n$G_C  Starting ip change systemwide$N_C\n";
-	grep -RIil --exclude={*.run*,*random*} $1 /var/named* | xargs sed -i "s@$1@$2@gi";
-	grep -RIil --exclude={*.run*,*random*} $1 /var/lib/powerdns* | xargs sed -i "s@$1@$2@gi";
-	grep -RIil --exclude={*.run*,*random*} $1 /etc* | xargs sed -i "s@$1@$2@gi";
+	grep --devices=skip -RIil --exclude={*.run*,*random*} $1 /var/named* | xargs sed -i "s@$1@$2@gi";
+	grep --devices=skip -RIil --exclude={*.run*,*random*} $1 /var/lib/powerdns* | xargs sed -i "s@$1@$2@gi";
+	grep --devices=skip -RIil --exclude={*.run*,*random*} $1 /etc* | xargs sed -i "s@$1@$2@gi";
 
 	printf "\n$G_C  $1 -> $2 changed.$N_C\n";
 
