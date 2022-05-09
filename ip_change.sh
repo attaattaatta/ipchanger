@@ -11,10 +11,12 @@ R_C="\033[0;91m";
 G_C="\033[0;92m";
 N_C="\033[0m";
 
+args=("$@")
+
 SELF_NAME=$(basename "$0");
 
-if [[ -z "${1}" ]]; then printf "$R_C Old ip not set up$N_C\n  Usage $SELF_NAME old_ip new_ip\n"; exit 1; else printf "$R_C Old ip - $1$N_C\n"; fi;
-if [[ -z "${2}" ]]; then printf "$G_C New ip not set up$N_C\n  Usage $SELF_NAME old_ip new_ip\n"; exit 1; else printf "$G_C New ip - $2$N_C\n"; fi;
+if [[ -z "${1}" ]]; then printf "$R_C Old ip not set up$N_C\n  Usage $SELF_NAME old_ip new_ip\n"; exit 1; else printf "$R_C Old ip - ${args[0]}$N_C\n"; fi;
+if [[ -z "${2}" ]]; then printf "$G_C New ip not set up$N_C\n  Usage $SELF_NAME old_ip new_ip\n"; exit 1; else printf "$G_C New ip - ${args[1]}$N_C\n"; fi;
 
 
 proceed_without_isp() {
@@ -30,26 +32,26 @@ proceed_without_isp() {
 			echo "$(ip a)"; echo; echo "$(ip r)";
 
 			printf "\n$G_C  Starting ip change systemwide$N_C\n";
-			grep --devices=skip -RIil --exclude={*.run*,*random*} $1 /var/named* | xargs sed -i "s@$1@$2@gi";
-			grep --devices=skip -RIil --exclude={*.run*,*random*} $1 /var/lib/powerdns* | xargs sed -i "s@$1@$2@gi";
-			grep --devices=skip -RIil --exclude={*.run*,*random*} $1 /etc* | xargs sed -i "s@$1@$2@gi";
+			grep --devices=skip -RIil --exclude={*.run*,*random*} ${args[0]} /var/named* | xargs sed -i "s@${args[0]}@${args[1]}@gi";
+			grep --devices=skip -RIil --exclude={*.run*,*random*} ${args[0]} /var/lib/powerdns* | xargs sed -i "s@${args[0]}@${args[1]}@gi";
+			grep --devices=skip -RIil --exclude={*.run*,*random*} ${args[0]} /etc* | xargs sed -i "s@${args[0]}@${args[1]}@gi";
 
-			printf "\n$G_C  $1 -> $2 changed.$N_C\n";
+			printf "\n$G_C  ${args[0]} -> ${args[1]} changed.$N_C\n";
 
 			if [ "$ISP5_RTG" = "1" ]; then 
-				printf "\n$R_C  Update ISP license, RUN manually: curl -X POST -F \"func=soft.edit\" -F \"elid=$ISP5_LITE_ELID\" -F \"out=text\" -F \"ip=$2\" -F \"sok=ok\" -ks \"https://my.ispsystem.com/billmgr\" -F \"authinfo=support@provider:password\" $N_C\n";
-				printf "\n$G_C  ISP Manager - https://ssh.hoztnode.net/?url=$2:1500/ispmgr $N_C\n";
+				printf "\n$R_C  Update ISP license, RUN manually: curl -X POST -F \"func=soft.edit\" -F \"elid=$ISP5_LITE_ELID\" -F \"out=text\" -F \"ip=${args[1]}\" -F \"sok=ok\" -ks \"https://my.ispsystem.com/billmgr\" -F \"authinfo=support@provider:password\" $N_C\n";
+				printf "\n$G_C  ISP Manager - https://ssh.hoztnode.net/?url=${args[1]}:1500/ispmgr $N_C\n";
 			fi;
 			
 			echo;
 			echo -n "  Default gateway need to be changed ? [y/n] ";
 			read answer;
 			if [ "$answer" != "${answer#[Yy]}" ] ;then
-				printf "\n$G_C  Ok. Change gateway manually and delete old ip $1 from Billing with reboot (do not check -billing only- checkbox). $N_C\n";
+				printf "\n$G_C  Ok. Change gateway manually and delete old ip ${args[0]} from Billing with reboot (do not check -billing only- checkbox). $N_C\n";
 				printf "\n$G_C  Good luck, bro ! $N_C";
 				exit 0;
 			fi;
-			printf "\n$R_C  Now delete old ip $1 from Billing with reboot (do not check -billing only- checkbox). $N_C";
+			printf "\n$R_C  Now delete old ip ${args[0]} from Billing with reboot (do not check -billing only- checkbox). $N_C";
 			printf "\n$G_C  And don't forget to check DNS afterwards. $N_C";
 			printf "\n$G_C  Good luck, bro ! $N_C";
 		else
@@ -58,7 +60,7 @@ proceed_without_isp() {
 	fi	
 }
 
-echo -n "  DO NOT delete $1 in Billing now ! Did you add $2 in the Billing ? [y/n] ";
+echo -n "  DO NOT delete ${args[0]} in Billing now ! Did you add ${args[1]} in the Billing ? [y/n] ";
 read answer;
 if [[ "$answer" != "${answer#[Yy]}" ]] ; then
 
@@ -90,24 +92,24 @@ if [[ "$answer" != "${answer#[Yy]}" ]] ; then
                                 printf "\n$G_C  Backup file - $ISP5_LITE_MAIN_DB_FILE.$TSTAMP (and also in /root/support/$TSTAMP/)$N_C\n";
 
                                 printf "\n$G_C  Setting ihttpd listen all ips$N_C\n\n";
-                                $ISP5_PANEL_FILE -m core ihttpd.edit ip=any elid=$1 sok=ok
+                                $ISP5_PANEL_FILE -m core ihttpd.edit ip=any elid=${args[0]} sok=ok
 
-                                printf "\n$G_C  Adding new ip - $2$N_C\n\n";
-                                $ISP5_PANEL_FILE -m ispmgr ipaddrlist.edit name=$2 sok=ok;
+                                printf "\n$G_C  Adding new ip - ${args[1]}$N_C\n\n";
+                                $ISP5_PANEL_FILE -m ispmgr ipaddrlist.edit name=${args[1]} sok=ok;
 
-                                printf "\n$G_C  Updating db file (changing $1 with $2)$N_C\n";
+                                printf "\n$G_C  Updating db file (changing ${args[0]} with ${args[1]})$N_C\n";
 
                                 sqlite3_exist=$(if ! sqlite3 -v; then apt -y install sqlite || yum -y install sqlite; fi > /dev/null 2>&1);
-                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update webdomain_ipaddr set value='$2' where value='$1';";
-                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update emaildomain set ip='$2' where ip='$1';";
-                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update domain_auto set name=replace(name, '$1', '$2') where name like '%$1%';";
-                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update global_index set field_value='$2' where field_value='$1';";
+                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update webdomain_ipaddr set value='${args[1]}' where value='${args[0]}';";
+                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update emaildomain set ip='${args[1]}' where ip='${args[0]}';";
+                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update domain_auto set name=replace(name, '${args[0]}', '${args[1]}') where name like '%${args[0]}%';";
+                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update global_index set field_value='${args[1]}' where field_value='${args[0]}';";
 
 				\rm -rf /usr/local/mgr5/var/.xmlcache/*;
 				\rm -f /usr/local/mgr5/etc/ispmgr.lic /usr/local/mgr5/etc/ispmgr.lic.lock /usr/local/mgr5/var/.db.cache.*;
 
-                                printf "\n$G_C  Update completed. Removing old ip - $1$N_C\n";
-                                $ISP5_PANEL_FILE -m ispmgr ipaddrlist.delete elid=$1 sok=ok;
+                                printf "\n$G_C  Update completed. Removing old ip - ${args[0]}$N_C\n";
+                                $ISP5_PANEL_FILE -m ispmgr ipaddrlist.delete elid=${args[0]} sok=ok;
                                 $ISP5_PANEL_FILE -m ispmgr exit
 				 sleep 5s
 				proceed_without_isp
