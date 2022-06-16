@@ -39,7 +39,7 @@ proceed_without_isp() {
 			printf "\n$G_C  ${args[0]} -> ${args[1]} changed.$N_C\n";
 
 			if [ "$ISP5_RTG" = "1" ]; then 
-				printf "\n$R_C  Update ISP license, RUN manually: curl -X POST -F \"func=soft.edit\" -F \"elid=$ISP5_LITE_ELID\" -F \"out=text\" -F \"ip=${args[1]}\" -F \"sok=ok\" -ks \"https://my.ispsystem.com/billmgr\" -F \"authinfo=support@provider:password\" $N_C\n";
+				printf "\n$R_C  Update ISP license, RUN manually: curl -X POST -F \"func=soft.edit\" -F \"elid=$ISP5_LITE_ELID\" -F \"out=text\" -F \"ip=${args[1]}\" -F \"sok=ok\" -ks \"https://api.ispmanager.com/billmgr\" -F \"authinfo=support@provider:password\" $N_C\n";
 				printf "\n$G_C  ISP Manager - https://ssh.hoztnode.net/?url=${args[1]}:1500/ispmgr $N_C\n";
 			fi;
 			
