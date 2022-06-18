@@ -20,7 +20,7 @@ if [[ -z "${2}" ]]; then printf "$G_C New ip not set up$N_C\n  Usage $SELF_NAME 
 
 
 proceed_without_isp() {
-	read -p "Continiue IP change without ISP panel DB modification [Y/n]" -n 1 -r
+	read -p "Continiue IP change [Y/n]" -n 1 -r
 	echo
 	if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]
 		then
@@ -108,10 +108,10 @@ if [[ "$answer" != "${answer#[Yy]}" ]] ; then
 				\rm -rf /usr/local/mgr5/var/.xmlcache/*;
 				\rm -f /usr/local/mgr5/etc/ispmgr.lic /usr/local/mgr5/etc/ispmgr.lic.lock /usr/local/mgr5/var/.db.cache.*;
 
-                                printf "\n$G_C  Update completed. Removing old ip - ${args[0]}$N_C\n";
-                                $ISP5_PANEL_FILE -m ispmgr ipaddrlist.delete elid=${args[0]} sok=ok;
-                                $ISP5_PANEL_FILE -m ispmgr exit
-				 sleep 5s
+ #                               printf "\n$G_C  Update completed. Removing old ip - ${args[0]}$N_C\n";
+ #                               $ISP5_PANEL_FILE -m ispmgr ipaddrlist.delete elid=${args[0]} sok=ok;
+ #                               $ISP5_PANEL_FILE -m ispmgr exit
+#				 sleep 5s
 				proceed_without_isp
                                 ;;	
                         *)
