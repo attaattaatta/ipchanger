@@ -4,7 +4,6 @@
 # $2 - new ip
 
 export PATH=$PATH:/usr/sbin:/usr/sbin:/usr/local/sbin;
-clear;
 
 # colors
 R_C="\033[0;91m";
