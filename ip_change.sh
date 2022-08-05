@@ -34,6 +34,7 @@ proceed_without_isp() {
 			grep --devices=skip -RIil --exclude={*.run*,*random*} ${args[0]} /var/named* | xargs sed -i "s@${args[0]}@${args[1]}@gi";
 			grep --devices=skip -RIil --exclude={*.run*,*random*} ${args[0]} /var/lib/powerdns* | xargs sed -i "s@${args[0]}@${args[1]}@gi";
 			grep --devices=skip -RIil --exclude={*.run*,*random*} ${args[0]} /etc* | xargs sed -i "s@${args[0]}@${args[1]}@gi";
+			grep --devices=skip -RIil --exclude={*.run*,*random*} ${args[0]} /home* | xargs sed -i "s@${args[0]}@${args[1]}@gi";
 
 			printf "\n$G_C  ${args[0]} -> ${args[1]} changed.$N_C\n";
 
