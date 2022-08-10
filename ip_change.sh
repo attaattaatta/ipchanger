@@ -24,17 +24,17 @@ proceed_without_isp() {
 	if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]
 		then
 			printf "\n$G_C  Backing up current network settings to /root/support/$TSTAMP$N_C\n";
-			\cp -Rf /etc/network* /root/support/$TSTAMP/;
-			\cp -Rf /etc/sysconfig/network* /root/support/$TSTAMP/;
+			\cp -Rf /etc/network* /root/support/$TSTAMP/; &> /dev/null
+			\cp -Rf /etc/sysconfig/network* /root/support/$TSTAMP/; &> /dev/null
 
 			printf "\n$G_C  Current network settings:$N_C\n\n";
 			echo "$(ip a)"; echo; echo "$(ip r)";
 
 			printf "\n$G_C  Starting ip change systemwide$N_C\n";
-			grep --no-messages --devices=skip -RIil --exclude={*.run*,*random*} ${args[0]} /var/named* | xargs sed -i "s@${args[0]}@${args[1]}@gi";
-			grep --no-messages --devices=skip -RIil --exclude={*.run*,*random*} ${args[0]} /var/lib/powerdns* | xargs sed -i "s@${args[0]}@${args[1]}@gi";
-			grep --no-messages --devices=skip -RIil --exclude={*.run*,*random*} ${args[0]} /etc* | xargs sed -i "s@${args[0]}@${args[1]}@gi";
-			grep --no-messages --devices=skip -RIil --exclude={*.run*,*random*} ${args[0]} /home* | xargs sed -i "s@${args[0]}@${args[1]}@gi";
+			grep --no-messages --devices=skip -RIil --exclude={*.run*,*random*} ${args[0]} /var/named* | xargs sed -i "s@${args[0]}@${args[1]}@gi" &> /dev/null
+			grep --no-messages --devices=skip -RIil --exclude={*.run*,*random*} ${args[0]} /var/lib/powerdns* | xargs sed -i "s@${args[0]}@${args[1]}@gi" &> /dev/null
+			grep --no-messages --devices=skip -RIil --exclude={*.run*,*random*} ${args[0]} /etc* | xargs sed -i "s@${args[0]}@${args[1]}@gi" &> /dev/null
+			grep --no-messages --devices=skip -RIil --exclude={*.run*,*random*} ${args[0]} /home* | xargs sed -i "s@${args[0]}@${args[1]}@gi" &> /dev/null
 
 			printf "\n$G_C  ${args[0]} -> ${args[1]} changed.$N_C\n";
 
