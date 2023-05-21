@@ -19,8 +19,8 @@ if [[ -z "${2}" ]]; then printf "$G_C New ip not set up$N_C\n  Usage $SELF_NAME 
 
 
 proceed_without_isp() {
-	read -p "Continiue IP change [Y/n]" -n 1 -r
-	echo
+read -p "Continiue IP change [Y/n]" -n 1 -r
+echo
 	if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]
 		then
 			printf "\n$G_C  Backing up current network settings to /root/support/$TSTAMP$N_C\n";
@@ -43,17 +43,8 @@ proceed_without_isp() {
 				printf "\n$G_C  ISP Manager - https://ssh.hoztnode.net/?url=${args[1]}:1500/ispmgr $N_C\n";
 			fi;
 			
-			echo;
-			echo -n "  Default gateway need to be changed ? [y/n] ";
-			read answer;
-			if [ "$answer" != "${answer#[Yy]}" ] ;then
-				printf "\n$G_C  Ok. Change gateway manually and delete old ip ${args[0]} from Billing with reboot (do not check -billing only- checkbox). $N_C\n";
-				printf "\n$G_C  Good luck, bro ! $N_C";
-				exit 0;
-			fi;
-			printf "\n$R_C  Now delete old ip ${args[0]} from Billing with reboot (do not check -billing only- checkbox). $N_C";
-			printf "\n$G_C  And don't forget to check DNS afterwards. $N_C";
-			printf "\n$G_C  Good luck, bro ! $N_C";
+			echo
+			printf "If default gateway need to be changed do it manually."
 		else
 			printf "\n$G_C  Nothing is done. Come back, bro !$N_C\n";
 			exit 1
@@ -98,9 +89,10 @@ if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]
 	                                printf "\n$G_C  Adding new ip - ${args[1]}$N_C\n\n";
 	                                $ISP5_PANEL_FILE -m ispmgr ipaddrlist.edit name=${args[1]} sok=ok;
 	
-	                                printf "\n$G_C  Updating db file (changing ${args[0]} with ${args[1]})$N_C\n";
+	                                printf "\n$G_C Updating db file (changing ${args[0]} with ${args[1]})$N_C\n";
 	
-	                                sqlite3_exist=$(if ! sqlite3 -v; then apt -y install sqlite || yum -y install sqlite; fi > /dev/null 2>&1);
+	                                if ! sqlite3 -v; then apt update; apt -y install sqlite || yum -y install sqlite; fi > /dev/null 2>&1
+
 	                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update webdomain_ipaddr set value='${args[1]}' where value='${args[0]}';";
 	                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update emaildomain set ip='${args[1]}' where ip='${args[0]}';";
 	                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update domain_auto set name=replace(name, '${args[0]}', '${args[1]}') where name like '%${args[0]}%';";
@@ -115,17 +107,17 @@ if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]
 					proceed_without_isp
 	                                ;;	
 	                        *)
-	                                printf "\n$R_C  Unknown panel license version detected: $ISP5_LITE_LIC$N_C\n"; ISP5_RTG=0; sleep 5s; proceed_without_isp ;;
+	                                printf "\n$R_C Unknown panel license version detected: $ISP5_LITE_LIC$N_C\n"; ISP5_RTG=0; sleep 5s; proceed_without_isp ;;
 	                esac;
 	
 	        else 
-			printf "$R_C  No ISP5 panel detected.$N_C"
+			printf "$R_C No ISP5 panel detected.$N_C"
 			proceed_without_isp
 	        fi;
 		
 		else 
 			clear; 
-			printf "\n$G_C  Nothing is done. Come back, bro !$N_C\n";
+			printf "\n$G_C Nothing is done. Come back, bro !$N_C\n";
 			exit 0;
 	fi;
 
