@@ -51,7 +51,7 @@ echo
 	fi	
 }
 
-read -p "This will change $R_C${args[0]}$N_C with $G_C${args[1]}$N_C systemwide. Proceed ? [Y/n]" -n 1 -r
+read -p "This will change $R_C ${args[0]} $N_C with $G_C ${args[1]} $N_C systemwide. Proceed ? [Y/n]" -n 1 -r
 echo
 if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]
 	then
