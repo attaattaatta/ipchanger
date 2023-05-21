@@ -60,72 +60,72 @@ proceed_without_isp() {
 	fi	
 }
 
-echo -n "  DO NOT delete ${args[0]} in Billing now ! Did you add ${args[1]} in the Billing ? [y/n] ";
-read answer;
-if [[ "$answer" != "${answer#[Yy]}" ]] ; then
-
-        # check ISP4 panel
-        if [[ -f "/usr/local/ispmgr/bin/ispmgr" ]]; then printf "$R_C ISP 4 panel detected.$N_C"; ISP5_RTG=0; sleep 2s; proceed_without_isp; fi;
-
-        # vars
-	if [[ -f "/usr/local/mgr5/sbin/mgrctl" ]]
+read -p "This will change ${args[0]} with ${args[1]} systemwide. Proceed ? [Y/n]" -n 1 -r
+echo
+if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]
 	then
-        ISP5_PANEL_FILE="/usr/local/mgr5/sbin/mgrctl";
-	ISP5_LITE_ELID=$(/usr/local/mgr5/sbin/mgrctl -m ispmgr license.info | sed -n -e "s@^.*licid=@@p");
-        ISP5_LITE_LIC=$(/usr/local/mgr5/sbin/mgrctl -m ispmgr license.info | sed -n -e "s@^.*panel_name=@@p");
-	fi
-        TSTAMP=$(echo "$(date +%d-%m-%Y-%H-%M-%Z)")
 
-        mkdir -p /root/support/$TSTAMP
-
-        if [ -f "$ISP5_PANEL_FILE" ]; then shopt -s nocasematch;
-                case "$ISP5_LITE_LIC" in
-                        *busines*)
-                                printf "\n$R_C Business panel license detected.$N_C\n"; ISP5_RTG=0; sleep 2s; proceed_without_isp;;
-                        *lite*|*pro*|*host*)
-                                printf "\n$G_C Lite panel license detected.\n  Backing up db file$N_C\n"; ISP5_RTG=1; sleep 2s;
-
-                                ISP5_LITE_MAIN_DB_FILE="/usr/local/mgr5/etc/ispmgr.db";
-
-                                \cp -f $ISP5_LITE_MAIN_DB_FILE $ISP5_LITE_MAIN_DB_FILE.$TSTAMP;
-                                \cp -f $ISP5_LITE_MAIN_DB_FILE /root/support/$TSTAMP/
-                                printf "\n$G_C  Backup file - $ISP5_LITE_MAIN_DB_FILE.$TSTAMP (and also in /root/support/$TSTAMP/)$N_C\n";
-
-                                printf "\n$G_C  Setting ihttpd listen all ips$N_C\n\n";
-                                $ISP5_PANEL_FILE -m core ihttpd.edit ip=any elid=${args[0]} sok=ok
-
-                                printf "\n$G_C  Adding new ip - ${args[1]}$N_C\n\n";
-                                $ISP5_PANEL_FILE -m ispmgr ipaddrlist.edit name=${args[1]} sok=ok;
-
-                                printf "\n$G_C  Updating db file (changing ${args[0]} with ${args[1]})$N_C\n";
-
-                                sqlite3_exist=$(if ! sqlite3 -v; then apt -y install sqlite || yum -y install sqlite; fi > /dev/null 2>&1);
-                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update webdomain_ipaddr set value='${args[1]}' where value='${args[0]}';";
-                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update emaildomain set ip='${args[1]}' where ip='${args[0]}';";
-                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update domain_auto set name=replace(name, '${args[0]}', '${args[1]}') where name like '%${args[0]}%';";
-                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update global_index set field_value='${args[1]}' where field_value='${args[0]}';";
-
-				\rm -rf /usr/local/mgr5/var/.xmlcache/*;
-				\rm -f /usr/local/mgr5/etc/ispmgr.lic /usr/local/mgr5/etc/ispmgr.lic.lock /usr/local/mgr5/var/.db.cache.*;
-
- #                               printf "\n$G_C  Update completed. Removing old ip - ${args[0]}$N_C\n";
- #                               $ISP5_PANEL_FILE -m ispmgr ipaddrlist.delete elid=${args[0]} sok=ok;
- #                               $ISP5_PANEL_FILE -m ispmgr exit
-#				 sleep 5s
-				proceed_without_isp
-                                ;;	
-                        *)
-                                printf "\n$R_C  Unknown panel license detected. Version: $ISP5_LITE_LIC.$N_C\n"; ISP5_RTG=0; sleep 5s; proceed_without_isp ;;
-                esac;
-
-        else 
-		printf "$R_C  No ISP5 panel detected.$N_C"
-		proceed_without_isp
-        fi;
+	        # check ISP4 panel
+	        if [[ -f "/usr/local/ispmgr/bin/ispmgr" ]]; then printf "$R_C ISP 4 panel detected.$N_C"; ISP5_RTG=0; sleep 2s; proceed_without_isp; fi;
 	
-	else 
-		clear; 
-		printf "\n$G_C  Nothing is done. Come back, bro !$N_C\n";
-		exit 0;
-fi;
+	        # vars
+		if [[ -f "/usr/local/mgr5/sbin/mgrctl" ]]
+		then
+	        ISP5_PANEL_FILE="/usr/local/mgr5/sbin/mgrctl";
+		ISP5_LITE_ELID=$(/usr/local/mgr5/sbin/mgrctl -m ispmgr license.info | sed -n -e "s@^.*licid=@@p");
+	        ISP5_LITE_LIC=$(/usr/local/mgr5/sbin/mgrctl -m ispmgr license.info | sed -n -e "s@^.*panel_name=@@p");
+		fi
+	        TSTAMP=$(echo "$(date +%d-%m-%Y-%H-%M-%Z)")
+	
+	        mkdir -p /root/support/$TSTAMP
+	
+	        if [ -f "$ISP5_PANEL_FILE" ]; then shopt -s nocasematch;
+	                case "$ISP5_LITE_LIC" in
+	                        *busines*)
+	                                printf "\n$R_C Business panel license detected.$N_C\n"; ISP5_RTG=0; sleep 2s; proceed_without_isp;;
+	                        *lite*|*pro*|*host*)
+	                                printf "\n$G_C Lite panel license detected.\n  Backing up db file$N_C\n"; ISP5_RTG=1; sleep 2s;
+	
+	                                ISP5_LITE_MAIN_DB_FILE="/usr/local/mgr5/etc/ispmgr.db";
+	
+	                                \cp -f $ISP5_LITE_MAIN_DB_FILE $ISP5_LITE_MAIN_DB_FILE.$TSTAMP;
+	                                \cp -f $ISP5_LITE_MAIN_DB_FILE /root/support/$TSTAMP/
+	                                printf "\n$G_C  Backup file - $ISP5_LITE_MAIN_DB_FILE.$TSTAMP (and also in /root/support/$TSTAMP/)$N_C\n";
+	
+	                                printf "\n$G_C  Setting ihttpd listen all ips$N_C\n\n";
+	                                $ISP5_PANEL_FILE -m core ihttpd.edit ip=any elid=${args[0]} sok=ok
+	
+	                                printf "\n$G_C  Adding new ip - ${args[1]}$N_C\n\n";
+	                                $ISP5_PANEL_FILE -m ispmgr ipaddrlist.edit name=${args[1]} sok=ok;
+	
+	                                printf "\n$G_C  Updating db file (changing ${args[0]} with ${args[1]})$N_C\n";
+	
+	                                sqlite3_exist=$(if ! sqlite3 -v; then apt -y install sqlite || yum -y install sqlite; fi > /dev/null 2>&1);
+	                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update webdomain_ipaddr set value='${args[1]}' where value='${args[0]}';";
+	                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update emaildomain set ip='${args[1]}' where ip='${args[0]}';";
+	                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update domain_auto set name=replace(name, '${args[0]}', '${args[1]}') where name like '%${args[0]}%';";
+	                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update global_index set field_value='${args[1]}' where field_value='${args[0]}';";
+	
+					\rm -rf /usr/local/mgr5/var/.xmlcache/*;
+					\rm -f /usr/local/mgr5/etc/ispmgr.lic /usr/local/mgr5/etc/ispmgr.lic.lock /usr/local/mgr5/var/.db.cache.*;
+	
+#                           		$ISP5_PANEL_FILE -m ispmgr ipaddrlist.delete elid=${args[0]} sok=ok;
+	                                $ISP5_PANEL_FILE -m ispmgr -R
+					sleep 5s
+					proceed_without_isp
+	                                ;;	
+	                        *)
+	                                printf "\n$R_C  Unknown panel license version detected: $ISP5_LITE_LIC$N_C\n"; ISP5_RTG=0; sleep 5s; proceed_without_isp ;;
+	                esac;
+	
+	        else 
+			printf "$R_C  No ISP5 panel detected.$N_C"
+			proceed_without_isp
+	        fi;
+		
+		else 
+			clear; 
+			printf "\n$G_C  Nothing is done. Come back, bro !$N_C\n";
+			exit 0;
+	fi;
 
