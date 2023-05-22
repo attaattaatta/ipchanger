@@ -44,7 +44,7 @@ echo
 			fi;
 			
 			echo
-			printf "If default gateway need to be changed do it manually.\n"
+			printf "If default gateway IP address / subnet mask need to be changed, do it manually.\n"
 		else
 			printf "\n${G_C}Nothing is done. Come back, bro !${N_C}\n";
 			exit 1
@@ -122,7 +122,7 @@ if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]
 	                esac;
 	
 	        else 
-			printf "${R_C}No ISP5 panel detected.${N_C}"
+			printf "${R_C}No ISP5 panel detected.${N_C}\n"
 			proceed_without_isp
 	        fi;
 		
