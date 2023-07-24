@@ -102,7 +102,7 @@ if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]
 	
 	                                printf "\n${G_C}Updating db file (changing ${args[0]} with ${args[1]})${N_C}\n";
 	
-	                                if ! sqlite3 -v; then apt update; apt -y install sqlite || yum -y install sqlite; fi > /dev/null 2>&1
+	                                if ! sqlite3 -v; then apt update; apt -y install sqlite3 || yum -y install sqlite3; fi > /dev/null 2>&1
 
 	                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update webdomain_ipaddr set value='${args[1]}' where value='${args[0]}';";
 	                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update emaildomain set ip='${args[1]}' where ip='${args[0]}';";
