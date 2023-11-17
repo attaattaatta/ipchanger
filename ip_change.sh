@@ -85,8 +85,8 @@ if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]
 	                case "$ISP5_LITE_LIC" in
 	                        *busines*)
 	                                printf "\n${R_C}Business panel license detected.${N_C}\n"; ISP5_RTG=0; sleep 2s; proceed_without_isp;;
-	                        *lite*|*pro*|*host*)
-	                                printf "\n${G_C}Lite panel license detected.\n\nBacking up db file${N_C}\n"; ISP5_RTG=1; sleep 2s;
+	                        *lite*|*pro*|*host*|*trial*)
+	                                printf "\n${G_C}Lite or trial panel license detected.\n\nBacking up db file${N_C}\n"; ISP5_RTG=1; sleep 2s;
 	
 	                                ISP5_LITE_MAIN_DB_FILE="/usr/local/mgr5/etc/ispmgr.db";
 	
