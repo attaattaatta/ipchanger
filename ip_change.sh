@@ -9,6 +9,15 @@ export PATH=$PATH:/usr/sbin:/usr/sbin:/usr/local/sbin;
 R_C="\033[0;91m";
 G_C="\033[0;92m";
 N_C="\033[0m";
+RR_C=$'\e[0;91m'
+GG_C=$'\e[0;92m'
+PP_C="\033[1;35m"
+OO_C="\033[38;5;214m";
+YY_C="\033[1;33m"
+GGG_C="\033[0;32m"
+BB_C="\033[1;34m"
+PPP_C="\033[0;35m"
+NN_C=$'\033[0m'
 
 args=("$@")
 
@@ -34,7 +43,11 @@ echo
 			grep --no-messages --devices=skip -RIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpåg,*.webp} ${args[0]} /var/named* | xargs sed -i "s@${args[0]}@${args[1]}@gi" &> /dev/null
 			grep --no-messages --devices=skip -RIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpåg,*.webp} ${args[0]} /var/lib/powerdns* | xargs sed -i "s@${args[0]}@${args[1]}@gi" &> /dev/null
 			grep --no-messages --devices=skip -RIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpåg,*.webp} ${args[0]} /etc* | xargs sed -i "s@${args[0]}@${args[1]}@gi" &> /dev/null
-			grep --no-messages --devices=skip -RIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpåg,*.webp} ${args[0]} /home* | xargs sed -i "s@${args[0]}@${args[1]}@gi" &> /dev/null
+			read -p "/etc/ /var/named/ /var/lib/powerdns/ finished. Going /home/ (it could take long time) ? [y/N]" -n 1 -r
+			echo
+			if [[ $REPLY =~ ^[Yy]$ ]] then
+				grep --no-messages --devices=skip -RIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpåg,*.webp} ${args[0]} /home* | xargs sed -i "s@${args[0]}@${args[1]}@gi" &> /dev/null	
+			fi
 
 			printf "\n${G_C}${args[0]} -> ${args[1]} changed.${N_C}\n";
 
@@ -51,15 +64,6 @@ echo
 	fi	
 }
 
-RR_C=$'\e[0;91m'
-GG_C=$'\e[0;92m'
-PP_C="\033[1;35m"
-OO_C="\033[38;5;214m";
-YY_C="\033[1;33m"
-GGG_C="\033[0;32m"
-BB_C="\033[1;34m"
-PPP_C="\033[0;35m"
-NN_C=$'\033[0m'
 
 read -p "This will change${RR_C} ${args[0]}${NN_C} with${GG_C} ${args[1]}${NN_C} systemwide. Proceed ? [Y/n]" -n 1 -r
 echo
