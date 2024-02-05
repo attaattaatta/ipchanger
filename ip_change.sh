@@ -45,7 +45,8 @@ echo
 			grep --no-messages --devices=skip -RIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpåg,*.webp} ${args[0]} /etc* | xargs sed -i "s@${args[0]}@${args[1]}@gi" &> /dev/null
 			read -p "/etc/ /var/named/ /var/lib/powerdns/ finished. Going /home/ (it could take long time) ? [y/N]" -n 1 -r
 			echo
-			if [[ $REPLY =~ ^[Yy]$ ]] then
+			if [[ $REPLY =~ ^[Yy]$ ]]
+				then
 				grep --no-messages --devices=skip -RIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpåg,*.webp} ${args[0]} /home* | xargs sed -i "s@${args[0]}@${args[1]}@gi" &> /dev/null	
 			fi
 
