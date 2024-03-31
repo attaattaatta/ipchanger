@@ -114,7 +114,7 @@ if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]
 	                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update domain_auto set name=replace(name, '${args[0]}', '${args[1]}') where name like '%${args[0]}%';";
 	                                sqlite3 $ISP5_LITE_MAIN_DB_FILE "update global_index set field_value='${args[1]}' where field_value='${args[0]}';";
 
-					if [[ -f "/usr/sbin/pdns_server ]]
+					if [[ -f "/usr/sbin/pdns_server" ]]
 					then
 						mysql -D pdns -e "update records set content=replace(content,'${args[0]}', '${args[1]}');"
 					fi
