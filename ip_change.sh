@@ -35,7 +35,7 @@ if [[ -f "/usr/sbin/pdns_server" ]]
 then
 	printf "\n${G_C}Updating MySQL PowerDNS DB pdns ${N_C}\n";
 	mysql -D pdns -e "update records set content=replace(content,'${args[0]}', '${args[1]}');"
-	printf "\n${G_C}Updating done${N_C}\n";
+	printf "\n${G_C}Update completed${N_C}\n";
 fi
 
 }
@@ -76,13 +76,13 @@ echo
 			grep --no-messages --devices=skip -RIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /var/named/* | xargs sed -i "s@${args[0]}@${args[1]}@gi" &> /dev/null
 			grep --no-messages --devices=skip -RIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /var/lib/powerdns/* | xargs sed -i "s@${args[0]}@${args[1]}@gi" &> /dev/null
 			grep --no-messages --devices=skip -RIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /etc/* | xargs sed -i "s@${args[0]}@${args[1]}@gi" &> /dev/null
-			printf "\n${G_C}/etc/* /var/named/* /var/lib/powerdns/* done.${N_C}\n";
+			printf "\n${G_C}/etc/* /var/named/* /var/lib/powerdns/* done${N_C}\n";
 			echo
-			read -p "Going thru /home/* ? (for ex. VESTA panel, it could take a very loooooooooong time) [y/N]" -n 1 -r
+			read -p "Going thru /home/* ? (for ex. VESTA panel, Bitrix, etc. It could take a very loooooooooong time) [y/N]" -n 1 -r
 			echo
 			if [[ $REPLY =~ ^[Yy]$ ]]
 				then
-				grep --no-messages --devices=skip -RIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpåg,*.webp} ${args[0]} /home/* | xargs sed -i "s@${args[0]}@${args[1]}@gi" &> /dev/null	
+				grep --no-messages --devices=skip -RIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /home/* | xargs sed -i "s@${args[0]}@${args[1]}@gi" &> /dev/null	
 			fi
 
 			printf "\n${G_C}${args[0]} -> ${args[1]} changed${N_C}\n";
@@ -160,6 +160,8 @@ then
 					sqlite3 $ISP5_LITE_MAIN_DB_FILE "update emaildomain set ip='${args[1]}' where ip='${args[0]}';";
 					sqlite3 $ISP5_LITE_MAIN_DB_FILE "update domain_auto set name=replace(name, '${args[0]}', '${args[1]}') where name like '%${args[0]}%';";
 					sqlite3 $ISP5_LITE_MAIN_DB_FILE "update global_index set field_value='${args[1]}' where field_value='${args[0]}';";
+
+					printf "\n${G_C}Update completed${N_C}\n";
 	
 					isp_pdns_ipchanger
 					proceed_with_isp
@@ -184,7 +186,7 @@ then
 						mysql -D ispmgr -e "update domain_auto set name=replace(name, '${args[0]}', '${args[1]}') where name like '%${args[0]}%';";
 						mysql -D ispmgr -e "update global_index set field_value='${args[1]}' where field_value='${args[0]}';";
 						
-						printf "\n${G_C}Updating done${N_C}\n";
+						printf "\n${G_C}Update completed${N_C}\n";
 
 						isp_pdns_ipchanger
 						proceed_with_isp
