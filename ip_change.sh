@@ -64,7 +64,7 @@ sleep 5s
 proceed_without_isp() {
 read -p "Continiue IP change [Y/n]" -n 1 -r
 echo
-	if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]
+	if ! [[ $REPLY =~ ^[Nn]$ ]]
 		then
 			printf "\n${G_C}Backing up current network settings to /root/support/$TSTAMP${N_C}\n";
 			\cp -Rf /etc/network* /root/support/$TSTAMP/ >/dev/null 2>/dev/null
@@ -110,7 +110,7 @@ read -p "This will change${RR_C} ${args[0]}${NN_C} with${GG_C} ${args[1]}${NN_C}
 
 echo
 
-if [[ $REPLY =~ ^[Yy]$ ]] || [[ -z $REPLY ]]
+if ! [[ $REPLY =~ ^[Nn]$ ]]
 then
 	printf "Let\'s do this ma brave ${PP_C}g${N_C}${R_C}a${N_C}${OO_C}n${N_C}${YY_C}g${N_C}${G_C}s${N_C}${BB_C}t${N_C}${PPP_C}a${N_C}\nWait a bit\n"
 
