@@ -1,7 +1,7 @@
-# ipchanger
+п»ї# ipchanger
 bash ip changer
 
-## Запуск:
+## Р—Р°РїСѓСЃРє:
 ```
 bash <(wget --no-check-certificate -q -o /dev/null -O- https://bit.ly/3uSpUrM) old_ip new_ip
 ```
