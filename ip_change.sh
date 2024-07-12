@@ -19,6 +19,13 @@ BB_C="\033[1;34m"
 PPP_C="\033[0;35m"
 NN_C=$'\033[0m'
 
+# check privileges
+if [[ $EUID -ne 0 ]]
+then
+	printf "\n${LRV}ERROR - This script must be run as root.${NCV}" 
+	exit 1
+fi
+
 args=("$@")
 
 SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
