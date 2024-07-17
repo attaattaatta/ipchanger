@@ -6,23 +6,27 @@
 export PATH=$PATH:/usr/sbin:/usr/sbin:/usr/local/sbin;
 
 # colors
-R_C="\033[0;91m";
-G_C="\033[0;92m";
-N_C="\033[0m";
-RR_C=$'\e[0;91m'
-GG_C=$'\e[0;92m'
+R_C="\033[0;91m"
+G_C="\033[0;92m"
+N_C="\033[0m"
+Y_C="\033[1;33m"
+RR_C="\e[0;91m"
+GG_C="\e[0;92m"
 PP_C="\033[1;35m"
-OO_C="\033[38;5;214m";
+OO_C="\033[38;5;214m"
 YY_C="\033[1;33m"
 GGG_C="\033[0;32m"
 BB_C="\033[1;34m"
 PPP_C="\033[0;35m"
-NN_C=$'\033[0m'
+
+# show script version
+self_current_version="1.0.2"
+printf "\n${YY_C}Hello${N_C}, my version is ${YY_C}$self_current_version\n\n${N_C}"
 
 # check privileges
 if [[ $EUID -ne 0 ]]
 then
-	printf "\n${LRV}ERROR - This script must be run as root.${NCV}" 
+	printf "\n${R_C}ERROR - This script must be run as root.${N_C}" 
 	exit 1
 fi
 
@@ -32,8 +36,10 @@ SCRIPT_DIR=$( cd -- "$( dirname -- "${BASH_SOURCE[0]}" )" &> /dev/null && pwd )
 SELF_NAME=$(basename "$0");
 TSTAMP=$(echo "$(date +%d-%m-%Y-%H-%M-%Z)")
 
-if [[ -z "${1}" ]]; then printf "${R_C}Old ip not set${N_C}\nUsage: $SCRIPT_DIR/$SELF_NAME old_ip new_ip\n"; exit 1; fi;
-if [[ -z "${2}" ]]; then printf "${G_C}New ip not set${N_C}\nUsage: $SCRIPT_DIR/$SELF_NAME old_ip new_ip\n"; exit 1; fi;
+USAGE_INFO=$(echo; printf "Use 2 or 4 arguments."; echo; printf "Usage: $SCRIPT_DIR/$SELF_NAME old_ip new_ip <old_gateway> <new_gateway>")
+
+# args check
+if [[ "$#" -lt 2 ]] || [[ "$#" -eq 3 ]]; then printf "\n${R_C}Not enough args${N_C}\n"; echo ${USAGE_INFO}; exit 1; fi;
 
 # PowerDNS mysql DB update
 isp_pdns_ipchanger() {
@@ -53,8 +59,8 @@ proceed_with_isp() {
 printf "\n${G_C}Setting ihttpd listen all ips${N_C}\n";
 $ISP5_PANEL_FILE -m core ihttpd.edit ip=any elid=${args[0]} sok=ok >/dev/null 2>/dev/null
 
-printf "\n${G_C}Adding new ip - ${args[1]}${N_C}\n";
-$ISP5_PANEL_FILE -m ispmgr ipaddrlist.edit name=${args[1]} sok=ok >/dev/null 2>/dev/null
+#printf "\n${G_C}Adding new ip - ${args[1]}${N_C}\n";
+#$ISP5_PANEL_FILE -m ispmgr ipaddrlist.edit name=${args[1]} sok=ok >/dev/null 2>/dev/null
 
 printf "\n${G_C}Cleaning ISP Manager cache${N_C}\n";
 \rm -rf /usr/local/mgr5/var/.xmlcache/*;
@@ -80,10 +86,28 @@ echo
 			echo "$(ip a)"; echo; echo "$(ip r)";
 
 			printf "\n${G_C}Starting ip change systemwide${N_C}\n";
-			grep --no-messages --devices=skip -RIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /var/named/* | xargs sed -i "s@${args[0]}@${args[1]}@gi" &> /dev/null
-			grep --no-messages --devices=skip -RIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /var/lib/powerdns/* | xargs sed -i "s@${args[0]}@${args[1]}@gi" &> /dev/null
-			grep --no-messages --devices=skip -RIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /etc/* | xargs sed -i "s@${args[0]}@${args[1]}@gi" &> /dev/null
-			printf "\n${G_C}/etc/* /var/named/* /var/lib/powerdns/* done${N_C}\n";
+
+			#network manager check
+
+			if which nmcli &> /dev/null && [[ ! -z "$( \ls -A '/etc/NetworkManager/system-connections/' )" ]]
+			then
+				printf "\n${G_C}NetworkManager detected${N_C}\nConfiruration in /etc/NetworkManager/system-connections/\n";
+			fi 
+
+			#netplan check
+			if which netplan &> /dev/null && [[ ! -z "$( \ls -A '/etc/netplan/' )" ]]
+			then
+				printf "\n${G_C}Netplan detected${N_C}\nConfiruration in /etc/netplan/\n";
+			fi
+
+			IP_CHANGE_PATH_LIST=("/etc/*" "/var/named/*" "/var/lib/powerdns/*")
+
+			for ip_change_list_item in "${IP_CHANGE_PATH_LIST[@]}"
+			do
+				echo "Processing ${ip_change_list_item}";
+				grep --no-messages --devices=skip -RIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} ${ip_change_list_item} | xargs sed -i "s@${args[0]}@${args[1]}@gi" &> /dev/null
+			done
+
 			echo
 			read -p "Going thru /home/* ? (for ex. VESTA panel, Bitrix, etc. It could take a very loooooooooong time) [y/N]" -n 1 -r
 			echo
@@ -92,28 +116,59 @@ echo
 				grep --no-messages --devices=skip -RIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /home/* | xargs sed -i "s@${args[0]}@${args[1]}@gi" &> /dev/null	
 			fi
 
-			printf "\n${G_C}${args[0]} -> ${args[1]} changed${N_C}\n";
+			# if we change gateway
+			if [[ $GATEWAY_CHANGE == "YES" ]]
+			then
+				printf "\n${G_C}Changing gateway address${N_C}\n";
+
+				GATEWAY_CONFIG_PATH_LIST=("/etc/NetworkManager/system-connections/*" "/etc/netplan/*" "/etc/network/interfaces" "/etc/network/interfaces.d/*" "/etc/sysconfig/network-scripts/*");
+
+				for gateway_config_item in "${GATEWAY_CONFIG_PATH_LIST[@]}"
+				do
+					echo "Processing ${gateway_config_item}"
+					grep --no-messages --devices=skip -RIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[2]} ${gateway_config_item} | xargs sed -i "s@${args[2]}@${args[3]}@gi" &> /dev/null
+				done
+
+				GATEWAY_CHANGED=YES
+				unset GATEWAY_CHANGE
+			else
+				printf "\n${Y_C}3 and 4 script's agruments are empty. ${N_C}\n";
+				printf "${Y_C}If default gateway IP address / subnet mask need be changed, do it manually${N_C}\n"
+			fi
 
 			if [ "$ISP5_RTG" = "1" ]
 			then
-				printf "\n${G_C}Generating ISP Manager root session key${N_C}\n";
+				printf "\nGenerating ISP Manager root session key\n";
 				ispkey="$RANDOM$RANDOM$RANDOM$RANDOM$RANDOM$RANDOM$RANDOM"
-				/usr/local/mgr5/sbin/mgrctl -m ispmgr session.newkey username=root key=$ispkey &> /dev/null
+				\timeout 3 /usr/local/mgr5/sbin/mgrctl -m ispmgr session.newkey username=root key=$ispkey &> /dev/null
 				printf "\n${R_C}Update ISP license if needed, RUN manually: curl -X POST -F \"func=soft.edit\" -F \"elid=$ISP5_LITE_ELID\" -F \"out=text\" -F \"ip=${args[1]}\" -F \"sok=ok\" -ks \"https://api.ispmanager.com/billmgr\" -F \"authinfo=support@provider:password\" ${N_C}\n";
-				printf "\n${G_C}ISP Manager WEB KEY - https://${args[1]}:1500/ispmgr?func=auth&username=root&key=$ispkey&checkcookie=no\nISP Manager WEB GO - https://ssh.hoztnode.net/?sshport=22&url=$abc:1500/ispmgr ${N_C}\n";
+				printf "\nISP Manager WEB KEY - https://${args[1]}:1500/ispmgr?func=auth&username=root&key=$ispkey&checkcookie=no\nISP Manager WEB GO - https://ssh.hoztnode.net/?sshport=22&url=${args[1]}:1500/ispmgr \n";
 			fi
 			
 			echo
-			printf "If default gateway IP address / subnet mask need to be changed, do it manually\n"
-			printf "${R_C}Do not forget to reboot this system (init 6)${N_C}"
+
+			printf "\n${G_C}${args[0]} -> ${args[1]} was changed${N_C}\n";
+			if [[ $GATEWAY_CHANGED == "YES" ]]
+			then 
+				printf "${G_C}Gateway IP ${args[2]} -> ${args[3]} was changed${N_C}\n"
+				printf "\n${Y_C}You should check subnet mask correctness ${N_C}\n"
+			fi
+
+
+			printf "${Y_C}Reboot this system (init 6) manually to apply changes${N_C}\n"
+
+			unset GATEWAY_CHANGED
 		else
 			printf "\n${G_C}Nothing was done. Come back, bro !${N_C}\n";
 			exit 1
 	fi	
 }
 
+printf "${Y_C}This will change${RR_C} ${args[0]}${N_C} with${GG_C} ${args[1]}${N_C}${N_C}"
+if [[ ! -z "${3}" ]]; then GATEWAY_CHANGE=YES; printf " and ${RR_C}${args[2]}${N_C} with${GG_C} ${args[3]}${N_C}${N_C}"; fi
+printf " systemwide.\n"
 
-read -p "This will change${RR_C} ${args[0]}${NN_C} with${GG_C} ${args[1]}${NN_C} systemwide. Proceed ? [Y/n]" -n 1 -r
+read -p "Proceed ? [Y/n]" -n 1 -r
 
 echo
 
@@ -211,8 +266,7 @@ then
 			proceed_without_isp
 	        fi;
 			
-else 
-	clear; 
-	printf "\n${G_C}Nothing was done. Come back, bro !${N_C}\n";
-	exit 0;
-fi;
+else
+	printf "\n${G_C}Nothing was done. Come back, bro !${N_C}\n"
+	exit 0
+fi
