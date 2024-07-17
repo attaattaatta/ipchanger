@@ -20,7 +20,7 @@ BB_C="\033[1;34m"
 PPP_C="\033[0;35m"
 
 # show script version
-self_current_version="1.0.2"
+self_current_version="1.0.3"
 printf "\n${YY_C}Hello${N_C}, my version is ${YY_C}$self_current_version\n\n${N_C}"
 
 # check privileges
@@ -80,10 +80,19 @@ echo
 	if ! [[ $REPLY =~ ^[Nn]$ ]]
 		then
 			printf "\n${G_C}Backing up current network settings to /root/support/$TSTAMP${N_C}\n";
-			\cp -Rf /etc/network* /root/support/$TSTAMP/ >/dev/null 2>/dev/null
-			\cp -Rf /etc/sysconfig/network* /root/support/$TSTAMP/ >/dev/null 2>/dev/null
+			
+			NETWORK_BACKUP_PATH_LIST=("/etc/network*" "/etc/sysconfig/network*" "/etc/NetworkManager*" "/etc/netplan*")
+
+			for network_backup_item in "${NETWORK_BACKUP_PATH_LIST[@]}"
+			do
+				\cp -Rf ${network_backup_item} /root/support/$TSTAMP/ >/dev/null 2>/dev/null
+			done
+
 			printf "\n${G_C}Current network settings:${N_C}\n\n";
-			echo "$(ip a)"; echo; echo "$(ip r)";
+
+			echo "$(\ip a)"
+			echo
+			echo "$(\ip r)"
 
 			printf "\n${G_C}Starting ip change systemwide${N_C}\n";
 
