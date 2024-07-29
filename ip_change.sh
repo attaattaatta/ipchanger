@@ -20,7 +20,7 @@ BB_C="\033[1;34m"
 PPP_C="\033[0;35m"
 
 # show script version
-self_current_version="1.0.3"
+self_current_version="1.0.4"
 printf "\n${YY_C}Hello${N_C}, my version is ${YY_C}$self_current_version\n\n${N_C}"
 
 # check privileges
@@ -59,8 +59,8 @@ proceed_with_isp() {
 printf "\n${G_C}Setting ihttpd listen all ips${N_C}\n";
 $ISP5_PANEL_FILE -m core ihttpd.edit ip=any elid=${args[0]} sok=ok >/dev/null 2>/dev/null
 
-#printf "\n${G_C}Adding new ip - ${args[1]}${N_C}\n";
-#$ISP5_PANEL_FILE -m ispmgr ipaddrlist.edit name=${args[1]} sok=ok >/dev/null 2>/dev/null
+printf "\n${G_C}Adding new ip - ${args[1]}${N_C}\n";
+$ISP5_PANEL_FILE -m ispmgr ipaddrlist.edit name=${args[1]} sok=ok >/dev/null 2>/dev/null
 
 printf "\n${G_C}Cleaning ISP Manager cache${N_C}\n";
 \rm -rf /usr/local/mgr5/var/.xmlcache/*;
