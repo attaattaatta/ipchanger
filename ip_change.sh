@@ -130,7 +130,7 @@ echo
 			then
 				printf "\n${G_C}Changing gateway address${N_C}\n";
 
-				GATEWAY_CONFIG_PATH_LIST=("/etc/NetworkManager/system-connections/*" "/etc/netplan/*" "/etc/network/interfaces" "/etc/network/interfaces.d/*" "/etc/sysconfig/network-scripts/*");
+				GATEWAY_CONFIG_PATH_LIST=("/etc/NetworkManager/system-connections/*" "/etc/netplan/*" "/etc/network/interfaces" "/etc/network/interfaces.d/*" "/etc/sysconfig/network*");
 
 				for gateway_config_item in "${GATEWAY_CONFIG_PATH_LIST[@]}"
 				do
