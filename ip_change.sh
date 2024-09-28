@@ -20,7 +20,7 @@ BB_C="\033[1;34m"
 PPP_C="\033[0;35m"
 
 # show script version
-self_current_version="1.0.5"
+self_current_version="1.0.6"
 printf "\n${YY_C}Hello${N_C}, my version is ${YY_C}$self_current_version\n\n${N_C}"
 
 # check privileges
@@ -114,7 +114,7 @@ echo
 			for ip_change_list_item in "${IP_CHANGE_PATH_LIST[@]}"
 			do
 				echo "Processing ${ip_change_list_item}";
-				grep --no-messages --devices=skip -RIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} ${ip_change_list_item} | xargs sed -i "s@${args[0]}@${args[1]}@gi" &> /dev/null
+				grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} ${ip_change_list_item} | xargs sed -i "s@${args[0]}@${args[1]}@gi" &> /dev/null
 			done
 
 			echo
@@ -122,7 +122,7 @@ echo
 			echo
 			if [[ $REPLY =~ ^[Yy]$ ]]
 				then
-				grep --no-messages --devices=skip -RIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /home/* | xargs sed -i "s@${args[0]}@${args[1]}@gi" &> /dev/null	
+				grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /home/* | xargs sed -i "s@${args[0]}@${args[1]}@gi" &> /dev/null	
 			fi
 
 			# if we change gateway
@@ -135,7 +135,7 @@ echo
 				for gateway_config_item in "${GATEWAY_CONFIG_PATH_LIST[@]}"
 				do
 					echo "Processing ${gateway_config_item}"
-					grep --no-messages --devices=skip -RIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[2]} ${gateway_config_item} | xargs sed -i "s@${args[2]}@${args[3]}@gi" &> /dev/null
+					grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[2]} ${gateway_config_item} | xargs sed -i "s@${args[2]}@${args[3]}@gi" &> /dev/null
 				done
 
 				GATEWAY_CHANGED=YES
