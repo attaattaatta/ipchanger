@@ -45,7 +45,7 @@ validate_ip() {
     IFS='.' read -r i1 i2 i3 i4 <<< "$arg"
 
     if [[ ! $arg =~ $valid_ip_regex ]] || (( i1 > 255 || i2 > 255 || i3 > 255 || i4 > 255 )); then
-        printf "\n${Y_C}WARNING ${arg} does not look like an IP address. ${N_C}\n"
+        printf "\n${Y_C}WARNING ${arg} does not look like an valid IPv4 address. ${N_C}\n"
         read -p "Proceed anyway ? [y/N]" -n 1 -r
         echo
 
