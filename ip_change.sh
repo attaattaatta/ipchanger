@@ -15,7 +15,7 @@ OO_C="\033[38;5;214m"
 BB_C="\033[1;34m"
 
 # Script version
-self_current_version="1.0.7"
+self_current_version="1.0.8"
 printf "\n${Y_C}Hello${N_C}, my version is ${Y_C}$self_current_version\n\n${N_C}"
 
 # Check for root privileges
@@ -38,6 +38,27 @@ if [[ "$#" -lt 2 ]] || [[ "$#" -eq 3 ]]; then
     echo "${USAGE_INFO}"
     exit 1
 fi
+
+# IP validation
+validate_ip() {
+    valid_ip_regex='^([0-9]{1,3}\.){3}[0-9]{1,3}$'
+    IFS='.' read -r i1 i2 i3 i4 <<< "$arg"
+
+    if [[ ! $arg =~ $valid_ip_regex ]] || (( i1 > 255 || i2 > 255 || i3 > 255 || i4 > 255 )); then
+        printf "\n${Y_C}WARNING ${arg} does not look like an IP address. ${N_C}\n"
+        read -p "Proceed anyway ? [y/N]" -n 1 -r
+        echo
+
+        if ! [[ $REPLY =~ ^[Yy]$ ]]; then
+            exit 1
+        fi
+    fi
+
+}
+
+for arg in "$@"; do
+    validate_ip $arg
+done
 
 # Update PowerDNS MySQL DB
 isp_pdns_ipchanger() {
