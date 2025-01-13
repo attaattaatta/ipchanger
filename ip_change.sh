@@ -15,7 +15,7 @@ OO_C="\033[38;5;214m"
 BB_C="\033[1;34m"
 
 # Script version
-self_current_version="1.0.8"
+self_current_version="1.0.9"
 printf "\n${Y_C}Hello${N_C}, my version is ${Y_C}$self_current_version\n\n${N_C}"
 
 # Check for root privileges
@@ -113,7 +113,7 @@ proceed_without_isp() {
             printf "\n${G_C}Netplan detected${N_C}\nConfiguration in /etc/netplan/\n"
         fi
 
-        IP_CHANGE_PATH_LIST=("/etc/*" "/var/named/*" "/var/lib/powerdns/*")
+        IP_CHANGE_PATH_LIST=("/etc/*" "/var/named/*" "/var/lib/powerdns/*" "/usr/local/mgr5/etc/ihttpd.conf")
 
         for ip_change_list_item in "${IP_CHANGE_PATH_LIST[@]}"; do
             echo "Processing ${ip_change_list_item}"
