@@ -15,7 +15,7 @@ OO_C="\033[38;5;214m"
 BB_C="\033[1;34m"
 
 # Script version
-self_current_version="1.0.10"
+self_current_version="1.0.11"
 printf "\n${Y_C}Hello${N_C}, my version is ${Y_C}$self_current_version\n\n${N_C}"
 
 # Check for root privileges
@@ -26,6 +26,13 @@ fi
 
 args=("$@")
 
+# isp vars
+MGR_PATH="/usr/local/mgr5"
+MGRBIN="$MGR_PATH/sbin/mgrctl"
+MGRCTL="$MGR_PATH/sbin/mgrctl -m ispmgr"
+MGR_MAIN_CONF_FILE="$MGR_PATH/etc/ispmgr.conf"
+
+# other vars
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
 SELF_NAME=$(basename "$0")
 TSTAMP=$(date +%d-%m-%Y-%H-%M-%Z)
@@ -122,7 +129,7 @@ proceed_without_isp() {
 
         echo
         read -p "Going through /home/* and /opt/* ? (for ex. VESTA panel, Bitrix, etc. It could take a very loooooooong time) [y/N]" -n 1 -r
-        echo
+
         if [[ $REPLY =~ ^[Yy]$ ]]; then
             grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /home/* | xargs sed -i "s@${args[0]}@${args[1]}@gi" &> /dev/null
             grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /opt/* | xargs sed -i "s@${args[0]}@${args[1]}@gi" &> /dev/null
@@ -142,27 +149,44 @@ proceed_without_isp() {
             GATEWAY_CHANGED=YES
             unset GATEWAY_CHANGE
         else
-            printf "\n${Y_C}3 and 4 script's arguments are empty. ${N_C}\n"
-            printf "${Y_C}If default gateway IP address / subnet mask need to be changed, do it manually${N_C}\n"
+            printf "\n${Y_C}3 and 4 script's arguments were empty ${N_C}\n"
+            printf "If default gateway IP address / subnet mask need to be changed, do it manually\n"
         fi
 
         if [ "$ISP5_RTG" = "1" ]; then
-            printf "\nGenerating ISP Manager root session key\n"
+            printf "\n${Y_C}To update ISP Manager license, run:${N_C}\ncurl -X POST -F \"func=soft.edit\" -F \"elid=$ISP5_LITE_ELID\" -F \"out=text\" -F \"ip=${args[1]}\" -F \"sok=ok\" -ks \"https://api.ispmanager.com/billmgr\" -F \"authinfo=support@provider:password\"\n"
+
+            # ISP Manager root access key generation and print
+
             ispkey="$RANDOM$RANDOM$RANDOM$RANDOM$RANDOM$RANDOM$RANDOM"
-            timeout 3 /usr/local/mgr5/sbin/mgrctl -m ispmgr session.newkey username=root key=$ispkey &> /dev/null
-            printf "\n${R_C}Update ISP license if needed, RUN manually: curl -X POST -F \"func=soft.edit\" -F \"elid=$ISP5_LITE_ELID\" -F \"out=text\" -F \"ip=${args[1]}\" -F \"sok=ok\" -ks \"https://api.ispmanager.com/billmgr\" -F \"authinfo=support@provider:password\" ${N_C}\n"
-            printf "\nISP Manager WEB KEY - https://${args[1]}:1500/ispmgr?func=auth&username=root&key=$ispkey&checkcookie=no\nISP Manager WEB GO - https://ssh.hoztnode.net/?sshport=22&url=${args[1]}:1500/ispmgr \n"
+            if timeout 3 $MGRBIN -m ispmgr session.newkey username=root key=$ispkey > /dev/null 2>&1; then
+
+                ihttpd_conf="/usr/local/mgr5/etc/ihttpd.conf"
+                ihttpd_ip=$(grep -v '^#' $ihttpd_conf 2>/dev/null  | grep ip | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}')
+                ihttpd_port=$(grep -v '^#' $ihttpd_conf 2>/dev/null | grep port | grep -oE [[:digit:]]+)
+
+                printf "\n${Y_C}Generating ISP Manager root session key${N_C} "
+
+                if [[ ! -z  $ihttpd_port ]]; then
+                    ispgenurlp1="ISP Manager KEY - https://"
+                    ispgenurlp2="/ispmgr?func=auth&username=root&key=$ispkey&checkcookie=no"
+
+                    printf "\n${ispgenurlp1}${ihttpd_ip}:${ihttpd_port}${ispgenurlp2}\n"
+                else
+                    printf "\n${ispgenurlp1}${args[1]}:1500${ispgenurlp2}\n"
+                fi
+            fi
         fi
 
         echo
 
-        printf "\n${G_C}${args[0]} -> ${args[1]} was changed${N_C}\n"
+        printf "${Y_C}${args[0]} -> ${args[1]} was changed${N_C}\n"
         if [[ $GATEWAY_CHANGED == "YES" ]]; then
             printf "${G_C}Gateway IP ${args[2]} -> ${args[3]} was changed${N_C}\n"
             printf "\n${Y_C}You should check subnet mask correctness ${N_C}\n"
         fi
 
-        printf "${Y_C}Reboot this system (init 6) manually to apply changes${N_C}\n"
+        printf "Adjust the network mask if necessary and reboot this system (${Y_C}run init 6${N_C}) manually to apply all changes\n"
 
         unset GATEWAY_CHANGED
     else
@@ -191,10 +215,10 @@ if ! [[ $REPLY =~ ^[Nn]$ ]]; then
     fi
 
     # Variables
-    if [[ -f "/usr/local/mgr5/sbin/mgrctl" ]]; then
-        ISP5_PANEL_FILE="/usr/local/mgr5/sbin/mgrctl"
-        ISP5_LITE_ELID=$(/usr/local/mgr5/sbin/mgrctl -m ispmgr license.info | sed -n -e "s@^.*licid=@@p")
-        ISP5_LITE_LIC=$(/usr/local/mgr5/sbin/mgrctl -m ispmgr license.info | sed -n -e "s@^.*panel_name=@@p")
+    if [[ -f "$MGRBIN" ]]; then
+        ISP5_PANEL_FILE="$MGRBIN"
+        ISP5_LITE_ELID=$($MGRCTL license.info | sed -n -e "s@^.*licid=@@p")
+        ISP5_LITE_LIC=$($MGRCTL license.info | sed -n -e "s@^.*panel_name=@@p")
     fi
 
     mkdir -p /root/support/$TSTAMP
