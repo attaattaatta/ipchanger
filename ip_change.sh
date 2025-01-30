@@ -15,7 +15,7 @@ OO_C="\033[38;5;214m"
 BB_C="\033[1;34m"
 
 # Script version
-self_current_version="1.0.11"
+self_current_version="1.0.12"
 printf "\n${Y_C}Hello${N_C}, my version is ${Y_C}$self_current_version\n\n${N_C}"
 
 # Check for root privileges
@@ -164,17 +164,20 @@ proceed_without_isp() {
                 ihttpd_conf="/usr/local/mgr5/etc/ihttpd.conf"
                 ihttpd_ip=$(grep -v '^#' $ihttpd_conf 2>/dev/null  | grep ip | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}')
                 ihttpd_port=$(grep -v '^#' $ihttpd_conf 2>/dev/null | grep port | grep -oE [[:digit:]]+)
+                ispgenurlp1="ISP Manager KEY - https://"
+                ispgenurlp2="/ispmgr?func=auth&username=root&key=$ispkey&checkcookie=no"
 
                 printf "\n${Y_C}Generating ISP Manager root session key${N_C} "
 
-                if [[ ! -z  $ihttpd_port ]]; then
-                    ispgenurlp1="ISP Manager KEY - https://"
-                    ispgenurlp2="/ispmgr?func=auth&username=root&key=$ispkey&checkcookie=no"
-
-                    printf "\n${ispgenurlp1}${ihttpd_ip}:${ihttpd_port}${ispgenurlp2}\n"
-                else
-                    printf "\n${ispgenurlp1}${args[1]}:1500${ispgenurlp2}\n"
+                if [[ -z $ihttpd_port ]]; then
+                    ihttpd_port="1500"
                 fi
+
+                if [[ -z $ihttpd_ip ]]; then
+                    ihttpd_ip="${args[1]}"
+                fi
+
+                printf "\n${ispgenurlp1}${ihttpd_ip}:${ihttpd_port}${ispgenurlp2}\n"
             fi
         fi
 
