@@ -15,7 +15,7 @@ OO_C="\033[38;5;214m"
 BB_C="\033[1;34m"
 
 # Script version
-self_current_version="1.0.13"
+self_current_version="1.0.14"
 printf "\n${Y_C}Hello${N_C}, my version is ${Y_C}$self_current_version\n\n${N_C}"
 
 # Check for root privileges
@@ -71,7 +71,7 @@ done
 isp_pdns_ipchanger() {
     if [[ -f "/usr/sbin/pdns_server" ]]; then
         printf "\n${G_C}Updating MySQL PowerDNS DB pdns ${N_C}\n"
-        mysql -D pdns -e "update records set content=replace(content,'${args[0]}', '${args[1]}');"
+        mysql -D pdns -e "update records set content=replace(content,'${args[0]}', '${args[1]}');" || mysql -D powerdns -e "update records set content=replace(content,'${args[0]}', '${args[1]}');"
         printf "\n${G_C}Update completed${N_C}\n"
     fi
 }
