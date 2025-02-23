@@ -71,8 +71,8 @@ done
 isp_pdns_ipchanger() {
     if [[ -f "/usr/sbin/pdns_server" ]]; then
         printf "\n${G_C}Updating MySQL PowerDNS DB pdns ${N_C}"
-	mysql -D pdns -e "update records set content=replace(content,'${args[0]}', '${args[1]}');" >/dev/null 2>/dev/null
-	mysql -D powerdns -e "update records set content=replace(content,'${args[0]}', '${args[1]}');" >/dev/null 2>/dev/null
+        mysql -D pdns -e "update records set content=replace(content,'${args[0]}', '${args[1]}');" >/dev/null 2>/dev/null
+        mysql -D powerdns -e "update records set content=replace(content,'${args[0]}', '${args[1]}');" >/dev/null 2>/dev/null
         printf " - ${G_C}OK${N_C}\n"
     fi
 }
