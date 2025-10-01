@@ -15,7 +15,7 @@ OO_C="\033[38;5;214m"
 BB_C="\033[1;34m"
 
 # Script version
-self_current_version="1.0.16"
+self_current_version="1.0.17"
 printf "\n${Y_C}Hello${N_C}, my version is ${Y_C}$self_current_version\n\n${N_C}"
 
 # Check for root privileges
@@ -64,7 +64,7 @@ validate_ip() {
 }
 
 for arg in "$@"; do
-    validate_ip $arg
+    validate_ip "$arg"
 done
 
 # Update PowerDNS MySQL DB
@@ -143,7 +143,7 @@ proceed_without_isp() {
         read -p "Going through /home/* and /opt/* ? (for ex. VESTA panel, Bitrix, etc. It could take a very loooooooong time) [y/N]" -n 1 -r
 
         if [[ $REPLY =~ ^[Yy]$ ]]; then
-            echo "Processing "/home/* and /opt/*"
+            echo "Processing /home/* and /opt/*"
             {
             grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /home/* | xargs sed -i "s@${args[0]}@${args[1]}@gi"
             grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /opt/* | xargs sed -i "s@${args[0]}@${args[1]}@gi" 
