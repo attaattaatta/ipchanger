@@ -19,4 +19,4 @@ bash <(curl -kLs https://bit.ly/3uSpUrM) old_ip new_ip <old_gateway> <new_gatewa
   - `/etc`, `/var/named`, `/var/lib/powerdns`, Docker, Netplan, NetworkManager
 - Обновление PowerDNS и ISPmanager (SQLite/MySQL)
 - Очистка кеша и перезапуск ISPmanager
-- Поддержка смены шлюза (опционально)
+- Поддержка смены шлюза (опционально, маску меняем руками)
