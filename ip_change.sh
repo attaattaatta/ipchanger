@@ -15,7 +15,7 @@ OO_C="\033[38;5;214m"
 BB_C="\033[1;34m"
 
 # Script version
-self_current_version="1.0.15"
+self_current_version="1.0.16"
 printf "\n${Y_C}Hello${N_C}, my version is ${Y_C}$self_current_version\n\n${N_C}"
 
 # Check for root privileges
@@ -131,10 +131,19 @@ proceed_without_isp() {
             } &> /dev/null
         done
 
+	echo
+	echo "Processing Docker"
+	{
+		systemctl stop docker
+		sed -i "s@${args[0]}@${args[1]}@gi" /var/lib/docker/containers/*/hostconfig.json
+		systemctl start docker
+	} &> /dev/null
+
         echo
         read -p "Going through /home/* and /opt/* ? (for ex. VESTA panel, Bitrix, etc. It could take a very loooooooong time) [y/N]" -n 1 -r
 
         if [[ $REPLY =~ ^[Yy]$ ]]; then
+            echo "Processing "/home/* and /opt/*"
             {
             grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /home/* | xargs sed -i "s@${args[0]}@${args[1]}@gi"
             grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /opt/* | xargs sed -i "s@${args[0]}@${args[1]}@gi" 
@@ -263,6 +272,8 @@ if ! [[ $REPLY =~ ^[Nn]$ ]]; then
                     sqlite3 $ISP5_LITE_MAIN_DB_FILE "update emaildomain set ip='${args[1]}' where ip='${args[0]}';"
                     sqlite3 $ISP5_LITE_MAIN_DB_FILE "update domain_auto set name=replace(name, '${args[0]}', '${args[1]}') where name like '%${args[0]}%';"
                     sqlite3 $ISP5_LITE_MAIN_DB_FILE "update global_index set field_value='${args[1]}' where field_value='${args[0]}';"
+                    sqlite3 $ISP5_LITE_MAIN_DB_FILE "update db_server set host = '${args[1]}' || substr(host, instr(host, ':')) where host like '${args[0]}:%';"
+                    sqlite3 $ISP5_LITE_MAIN_DB_FILE "update db_mysql_servers set hostname = '${args[1]}' where hostname = '${args[0]}';"
 
                     printf "\n${G_C}Update completed${N_C}\n"
 
@@ -285,6 +296,8 @@ if ! [[ $REPLY =~ ^[Nn]$ ]]; then
                     mysql -D ispmgr -e "update emaildomain set ip='${args[1]}' where ip='${args[0]}';"
                     mysql -D ispmgr -e "update domain_auto set name=replace(name, '${args[0]}', '${args[1]}') where name like '%${args[0]}%';"
                     mysql -D ispmgr -e "update global_index set field_value='${args[1]}' where field_value='${args[0]}';"
+                    mysql -D ispmgr -e "update db_server set host = concat('${args[1]}', substring(host, locate(':', host))) where host like '${args[0]}:%';"
+                    mysql -D ispmgr -e "update db_mysql_servers set hostname = '${args[1]}' where hostname = '${args[0]}';"
 
                     printf "\n${G_C}Update completed${N_C}\n"
 
