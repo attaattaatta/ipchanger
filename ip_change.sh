@@ -15,7 +15,7 @@ OO_C="\033[38;5;214m"
 BB_C="\033[1;34m"
 
 # Script version
-self_current_version="1.0.17"
+self_current_version="1.0.18"
 printf "\n${Y_C}Hello${N_C}, my version is ${Y_C}$self_current_version\n\n${N_C}"
 
 # Check for root privileges
@@ -140,14 +140,16 @@ proceed_without_isp() {
 	} &> /dev/null
 
         echo
-        read -p "Going through /home/* and /opt/* ? (for ex. VESTA panel, Bitrix, etc. It could take a very loooooooong time) [y/N]" -n 1 -r
+        read -p "Going through /home/* and /opt/* /usr/local/fastpanel2/* ? (for ex. VESTA panel, Bitrix, etc. It could take a very loooooooong time) [y/N]" -n 1 -r
 
         if [[ $REPLY =~ ^[Yy]$ ]]; then
-            echo "Processing /home/* and /opt/*"
+            echo
+            echo "Processing /home/* /opt/* /usr/local/fastpanel2/*"
             {
             grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /home/* | xargs sed -i "s@${args[0]}@${args[1]}@gi"
-            grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /opt/* | xargs sed -i "s@${args[0]}@${args[1]}@gi" 
-            find /home/* /opt/* -depth -iname "*${args[0]}*" -exec bash -c 'mv "$0" "${0//'"${args[0]}"'/'"${args[1]}"'}"' {} \; 
+            grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /opt/* | xargs sed -i "s@${args[0]}@${args[1]}@gi"
+            grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /usr/local/fastpanel2/* | xargs sed -i "s@${args[0]}@${args[1]}@gi"
+            find /home/* /opt/* /usr/local/fastpanel2/* -depth -iname "*${args[0]}*" -exec bash -c 'mv "$0" "${0//'"${args[0]}"'/'"${args[1]}"'}"' {} \; 
             } &> /dev/null
         fi
 
