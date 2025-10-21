@@ -15,7 +15,7 @@ OO_C="\033[38;5;214m"
 BB_C="\033[1;34m"
 
 # Script version
-self_current_version="1.0.18"
+self_current_version="1.0.19"
 printf "\n${Y_C}Hello${N_C}, my version is ${Y_C}$self_current_version\n\n${N_C}"
 
 # Check for root privileges
@@ -276,6 +276,7 @@ if ! [[ $REPLY =~ ^[Nn]$ ]]; then
                     sqlite3 $ISP5_LITE_MAIN_DB_FILE "update global_index set field_value='${args[1]}' where field_value='${args[0]}';"
                     sqlite3 $ISP5_LITE_MAIN_DB_FILE "update db_server set host = '${args[1]}' || substr(host, instr(host, ':')) where host like '${args[0]}:%';"
                     sqlite3 $ISP5_LITE_MAIN_DB_FILE "update db_mysql_servers set hostname = '${args[1]}' where hostname = '${args[0]}';"
+                    sqlite3 $ISP5_LITE_MAIN_DB_FILE "delete from ipaddr where name='${args[0]}';"
 
                     printf "\n${G_C}Update completed${N_C}\n"
 
@@ -300,6 +301,7 @@ if ! [[ $REPLY =~ ^[Nn]$ ]]; then
                     mysql -D ispmgr -e "update global_index set field_value='${args[1]}' where field_value='${args[0]}';"
                     mysql -D ispmgr -e "update db_server set host = concat('${args[1]}', substring(host, locate(':', host))) where host like '${args[0]}:%';"
                     mysql -D ispmgr -e "update db_mysql_servers set hostname = '${args[1]}' where hostname = '${args[0]}';"
+                    mysql -D ispmgr -e "delete from ipaddr where name='${args[0]}';"
 
                     printf "\n${G_C}Update completed${N_C}\n"
 
