@@ -15,7 +15,7 @@ OO_C="\033[38;5;214m"
 BB_C="\033[1;34m"
 
 # Script version
-self_current_version="1.0.19"
+self_current_version="1.0.20"
 printf "\n${Y_C}Hello${N_C}, my version is ${Y_C}$self_current_version\n\n${N_C}"
 
 # Check for root privileges
@@ -246,6 +246,10 @@ if ! [[ $REPLY =~ ^[Nn]$ ]]; then
 
     if [ -f "$ISP5_PANEL_FILE" ]; then
         shopt -s nocasematch
+
+	# processing ISP Manager disabled sites
+	grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} ${MGR_PATH}/var/usrtmp/ispmgr/* | xargs sed -i "s@${args[0]}@${args[1]}@gi" >/dev/null 2>/dev/null
+
         case "$ISP5_LITE_LIC" in
             *busines*)
                 printf "\n${R_C}Business panel license detected${N_C}\n"
