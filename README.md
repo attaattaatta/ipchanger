@@ -5,10 +5,10 @@ bash ip changer
 
 ## Запуск:
 ```
-bash <(wget --no-check-certificate -q -o /dev/null -O- https://bit.ly/3uSpUrM) old_ip new_ip <old_gateway> <new_gateway>
+bash <(timeout 4 wget --timeout 4 --no-check-certificate -q -o /dev/null -O- https://bit.ly/3uSpUrM) old_ip new_ip <old_gateway> <new_gateway>
 ```
 ```
-bash <(curl -kLs https://bit.ly/3uSpUrM) old_ip new_ip <old_gateway> <new_gateway>
+bash <(timeout 4 curl -kLs https://bit.ly/3uSpUrM --connect-timeout 4) old_ip new_ip <old_gateway> <new_gateway>
 ```
 
 ## Возможности

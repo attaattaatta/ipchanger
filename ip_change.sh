@@ -247,8 +247,8 @@ if ! [[ $REPLY =~ ^[Nn]$ ]]; then
     if [ -f "$ISP5_PANEL_FILE" ]; then
         shopt -s nocasematch
 
-	# processing ISP Manager disabled sites
-	grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} ${MGR_PATH}/var/usrtmp/ispmgr/* | xargs sed -i "s@${args[0]}@${args[1]}@gi" >/dev/null 2>/dev/null
+        # processing ISP Manager disabled sites
+        grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} ${MGR_PATH}/var/usrtmp/ispmgr/* | xargs sed -i "s@${args[0]}@${args[1]}@gi" >/dev/null 2>/dev/null
 
         case "$ISP5_LITE_LIC" in
             *busines*)
