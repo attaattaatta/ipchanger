@@ -15,7 +15,7 @@ OO_C="\033[38;5;214m"
 BB_C="\033[1;34m"
 
 # Script version
-self_current_version="1.0.20"
+self_current_version="1.0.21"
 printf "\n${Y_C}Hello${N_C}, my version is ${Y_C}$self_current_version\n\n${N_C}"
 
 # Check for root privileges
@@ -23,6 +23,29 @@ if [[ $EUID -ne 0 ]]; then
     printf "\n${R_C}ERROR - This script must be run as root.${N_C}\n"
     exit 1
 fi
+
+# one instance run lock
+LOCKFILE=/tmp/bash_ip_changer.lock
+exec 9>"$LOCKFILE"
+
+if ! flock -n 9; then
+    PID=""
+    if command -v lsof >/dev/null 2>&1; then
+        PID=$(lsof -t "$LOCKFILE" 2>/dev/null | grep -v "^$$\$" | head -n1)
+    elif command -v fuser >/dev/null 2>&1; then
+        PID=$(fuser "$LOCKFILE" 2>/dev/null 2>/dev/null | tr ' ' '\n' | grep -v "^$$\$" | head -n1)
+    fi
+    
+    if [ -n "$PID" ]; then
+        printf "\n%s is ${LRV}already locked${NCV} by PID %s\n\n" "$LOCKFILE" "$PID"
+    else
+        printf "\n%s ${LRV}already exists${NCV}\nInstall 'lsof' or 'fuser' to see the PID.\n\n" "$LOCKFILE"
+    fi
+    
+    exit 1
+fi
+
+trap 'exec 9>&-; rm -f "$LOCKFILE"' EXIT
 
 args=("$@")
 
