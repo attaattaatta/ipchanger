@@ -15,7 +15,7 @@ OO_C="\033[38;5;214m"
 BB_C="\033[1;34m"
 
 # Script version
-self_current_version="1.0.21"
+self_current_version="1.0.22"
 printf "\n${Y_C}Hello${N_C}, my version is ${Y_C}$self_current_version\n\n${N_C}"
 
 # Check for root privileges
@@ -25,7 +25,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 # one instance run lock
-LOCKFILE=/tmp/bash_ip_changer.lock
+LOCKFILE=/run/lock/bash_ip_changer.lock
 exec 9>"$LOCKFILE"
 
 if ! flock -n 9; then
