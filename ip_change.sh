@@ -25,7 +25,7 @@ if [[ $EUID -ne 0 ]]; then
 fi
 
 # one instance run lock
-LOCKFILE=/run/lock/bash_ip_changer.lock
+LOCKFILE=/root/bash_ip_changer.lock
 exec 9>"$LOCKFILE"
 
 if ! flock -n 9; then
