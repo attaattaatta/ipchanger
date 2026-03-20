@@ -15,12 +15,12 @@ OO_C="\033[38;5;214m"
 BB_C="\033[1;34m"
 
 # Script version
-self_current_version="1.0.22"
+self_current_version="1.0.23"
 printf "\n${Y_C}Hello${N_C}, my version is ${Y_C}$self_current_version\n\n${N_C}"
 
 # Check for root privileges
 if [[ $EUID -ne 0 ]]; then
-    printf "\n${R_C}ERROR - This script must be run as root.${N_C}\n"
+    printf "\n${R_C}ERROR:${N_C} This script must be run as root\n"
     exit 1
 fi
 
@@ -54,6 +54,8 @@ MGR_PATH="/usr/local/mgr5"
 MGRBIN="$MGR_PATH/sbin/mgrctl"
 MGRCTL="$MGR_PATH/sbin/mgrctl -m ispmgr"
 MGR_MAIN_CONF_FILE="$MGR_PATH/etc/ispmgr.conf"
+ISP5_LITE_MAIN_DB_FILE="/usr/local/mgr5/etc/ispmgr.db"
+ISP_LIC_BAD="0"
 
 # other vars
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
@@ -64,7 +66,7 @@ USAGE_INFO=$(echo; printf "Use 2 or 4 arguments."; echo; printf "Usage: $SCRIPT_
 
 # Check arguments
 if [[ "$#" -lt 2 ]] || [[ "$#" -eq 3 ]]; then
-    printf "\n${R_C}Not enough args${N_C}\n"
+    printf "\n${R_C}ERROR:${N_C} Not enough args\n"
     echo "${USAGE_INFO}"
     exit 1
 fi
@@ -75,7 +77,7 @@ validate_ip() {
     IFS='.' read -r i1 i2 i3 i4 <<< "$arg"
 
     if [[ ! $arg =~ $valid_ip_regex ]] || (( i1 > 255 || i2 > 255 || i3 > 255 || i4 > 255 )); then
-        printf "\n${Y_C}WARNING ${arg} does not look like an valid IPv4 address. ${N_C}\n"
+        printf "\n${Y_C}WARNING:${N_C} ${arg} does not look like an valid IPv4 address.\n"
         read -p "Proceed anyway ? [y/N]" -n 1 -r
         echo
 
@@ -103,20 +105,23 @@ isp_pdns_ipchanger() {
 # ISP Manager changes
 proceed_with_isp() {
     printf "\n${G_C}Setting ihttpd listen all ips${N_C}\n"
-    $ISP5_PANEL_FILE -m core ihttpd.edit ip=any elid=${args[0]} sok=ok >/dev/null 2>/dev/null
+    if [[ $ISP_LIC_BAD = "0" ]];then
+        $ISP5_PANEL_FILE -m core ihttpd.edit ip=any elid=${args[0]} sok=ok >/dev/null 2>/dev/null
+    fi
 
     printf "\n${G_C}Cleaning ISP Manager cache${N_C}\n"
     rm -rf /usr/local/mgr5/var/.xmlcache/*
     rm -f /usr/local/mgr5/etc/ispmgr.lic /usr/local/mgr5/etc/ispmgr.lic.lock /usr/local/mgr5/var/.db.cache.*
 
     printf "\n${G_C}Restarting ISP Manager${N_C}\n\n"
-    $ISP5_PANEL_FILE -m ispmgr -R
-    sleep 5s
+    if [[ $ISP_LIC_BAD = "0" ]];then
+        $ISP5_PANEL_FILE -m ispmgr -R
+    fi
 }
 
 # Proceed without ISP Manager
 proceed_without_isp() {
-    read -p "Continue IP change [Y/n]" -n 1 -r
+    read -p "Continue IP change (files) [Y/n]" -n 1 -r
     echo
     if ! [[ $REPLY =~ ^[Nn]$ ]]; then
         printf "\n${G_C}Backing up current network settings to /root/support/$TSTAMP${N_C}\n"
@@ -194,7 +199,7 @@ proceed_without_isp() {
             printf "If default gateway IP address / subnet mask need to be changed, do it manually\n"
         fi
 
-        if [ "$ISP5_RTG" = "1" ]; then
+        if [[ "$ISP5_RTG" = "1" ]]; then
             printf "\n${Y_C}To update ISP Manager license, run:${N_C}\ncurl -X POST -F \"func=soft.edit\" -F \"elid=$ISP5_LITE_ELID\" -F \"out=text\" -F \"ip=${args[1]}\" -F \"sok=ok\" -ks \"https://api.ispmanager.com/billmgr\" -F \"authinfo=support@provider:password\"\n"
 
             # ISP Manager root access key generation and print
@@ -239,77 +244,38 @@ proceed_without_isp() {
     fi
 }
 
-printf "${Y_C}This will change${R_C} ${args[0]}${N_C} with${G_C} ${args[1]}${N_C}"
-if [[ ! -z "${3}" ]]; then GATEWAY_CHANGE=YES; printf " and ${R_C}${args[2]}${N_C} with${G_C} ${args[3]}${N_C}"; fi
-printf " systemwide.\n"
+# ISP panel proccessing
+isp_manager_processing() {
 
-read -p "Proceed? [Y/n]" -n 1 -r
-
-echo
-
-if ! [[ $REPLY =~ ^[Nn]$ ]]; then
-    printf "Let's do this my brave ${PP_C}g${N_C}${R_C}a${N_C}${OO_C}n${N_C}${Y_C}g${N_C}${G_C}s${N_C}${BB_C}t${N_C}${PP_C}a${N_C}\nWait a bit\n"
-
-    # Check ISP4 panel
-    if [[ -f "/usr/local/ispmgr/bin/ispmgr" ]]; then
-        printf "${R_C}ISP 4 panel detected.${N_C}"
-        ISP5_RTG=0
-        sleep 2s
-        proceed_without_isp
-    fi
-
-    # Variables
-    if [[ -f "$MGRBIN" ]]; then
-        ISP5_PANEL_FILE="$MGRBIN"
-        ISP5_LITE_ELID=$($MGRCTL license.info | sed -n -e "s@^.*licid=@@p")
-        ISP5_LITE_LIC=$($MGRCTL license.info | sed -n -e "s@^.*panel_name=@@p")
-    fi
-
-    mkdir -p /root/support/$TSTAMP
-
-    if [ -f "$ISP5_PANEL_FILE" ]; then
-        shopt -s nocasematch
-
-        # processing ISP Manager disabled sites
-        grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} ${MGR_PATH}/var/usrtmp/ispmgr/* | xargs sed -i "s@${args[0]}@${args[1]}@gi" >/dev/null 2>/dev/null
-
-        case "$ISP5_LITE_LIC" in
-            *busines*)
-                printf "\n${R_C}Business panel license detected${N_C}\n"
-                ISP5_RTG=0
-                sleep 2s
-                proceed_without_isp
-                ;;
-            *lite*|*pro*|*host*|*trial*)
-                printf "\n${G_C}Lite or trial panel license detected${N_C}\n"
-                ISP5_RTG=1
-                sleep 2s
-
-                ISP5_LITE_MAIN_DB_FILE="/usr/local/mgr5/etc/ispmgr.db"
 
                 # ISP Manager in SQLite
                 if [[ -f "$ISP5_LITE_MAIN_DB_FILE" ]]; then
-                    cp -f $ISP5_LITE_MAIN_DB_FILE $ISP5_LITE_MAIN_DB_FILE.$TSTAMP
-                    cp -f $ISP5_LITE_MAIN_DB_FILE /root/support/$TSTAMP/
-                    printf "\n${G_C}DB backup file - $ISP5_LITE_MAIN_DB_FILE.$TSTAMP (and also in /root/support/$TSTAMP/)${N_C}\n"
-
-                    printf "\n${G_C}Updating db file (changing ${args[0]} with ${args[1]})${N_C}\n"
-
                     if ! which sqlite3; then apt update; apt -y install sqlite3 || yum -y install sqlite3; fi > /dev/null 2>&1
+                    if which sqlite3; then
 
-                    sqlite3 $ISP5_LITE_MAIN_DB_FILE "update webdomain_ipaddr set value='${args[1]}' where value='${args[0]}';"
-                    sqlite3 $ISP5_LITE_MAIN_DB_FILE "update emaildomain set ip='${args[1]}' where ip='${args[0]}';"
-                    sqlite3 $ISP5_LITE_MAIN_DB_FILE "update domain_auto set name=replace(name, '${args[0]}', '${args[1]}') where name like '%${args[0]}%';"
-                    sqlite3 $ISP5_LITE_MAIN_DB_FILE "update global_index set field_value='${args[1]}' where field_value='${args[0]}';"
-                    sqlite3 $ISP5_LITE_MAIN_DB_FILE "update db_server set host = '${args[1]}' || substr(host, instr(host, ':')) where host like '${args[0]}:%';"
-                    sqlite3 $ISP5_LITE_MAIN_DB_FILE "update db_mysql_servers set hostname = '${args[1]}' where hostname = '${args[0]}';"
-                    sqlite3 $ISP5_LITE_MAIN_DB_FILE "delete from ipaddr where name='${args[0]}';"
+                        cp -f $ISP5_LITE_MAIN_DB_FILE $ISP5_LITE_MAIN_DB_FILE.$TSTAMP
+                        cp -f $ISP5_LITE_MAIN_DB_FILE /root/support/$TSTAMP/
+                        printf "\n${G_C}DB backup file${N_C} - $ISP5_LITE_MAIN_DB_FILE.$TSTAMP (and also in /root/support/$TSTAMP/)\n"
 
-                    printf "\n${G_C}Update completed${N_C}\n"
+                        printf "\n${G_C}Updating db file (changing ${args[0]} with ${args[1]})${N_C}\n"
 
-                    isp_pdns_ipchanger
-                    proceed_with_isp
-                    proceed_without_isp
+                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update webdomain_ipaddr set value='${args[1]}' where value='${args[0]}';"
+                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update emaildomain set ip='${args[1]}' where ip='${args[0]}';"
+                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update domain_auto set name=replace(name, '${args[0]}', '${args[1]}') where name like '%${args[0]}%';"
+                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update global_index set field_value='${args[1]}' where field_value='${args[0]}';"
+                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update db_server set host = '${args[1]}' || substr(host, instr(host, ':')) where host like '${args[0]}:%';"
+                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update db_mysql_servers set hostname = '${args[1]}' where hostname = '${args[0]}';"
+                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "delete from ipaddr where name='${args[0]}';"
+
+                        printf "\n${G_C}Update completed${N_C}\n"
+
+                        isp_pdns_ipchanger
+                        proceed_with_isp
+                        proceed_without_isp
+                    else
+                        printf "\n${R_C}ERROR:${N_C} sqlite3 not found and cannot be installed. Install it manually and restart script.\n\n"
+			return 1
+                    fi
                 fi
 
                 # ISP Manager in MySQL
@@ -318,7 +284,7 @@ if ! [[ $REPLY =~ ^[Nn]$ ]]; then
                     if [[ $? -eq 0 ]]; then
                         printf "\n${G_C}DB backup file - /root/support/$TSTAMP/ispmgr.sql${N_C}\n"
                     else
-                        printf "\n${R_C}MySQL DB ispmgr backup failed.${N_C}\n"
+                        printf "\n${R_C}ERROR:${N_C} MySQL DB ispmgr backup has failed\n"
                     fi
                     printf "\n${G_C}Updating MySQL DB (changing ${args[0]} with ${args[1]})${N_C}\n"
 
@@ -335,12 +301,71 @@ if ! [[ $REPLY =~ ^[Nn]$ ]]; then
                     isp_pdns_ipchanger
                     proceed_with_isp
                     proceed_without_isp
-                fi
+	fi
+}
+
+printf "${Y_C}This will change${R_C} ${args[0]}${N_C} with${G_C} ${args[1]}${N_C}"
+if [[ ! -z "${3}" ]]; then GATEWAY_CHANGE=YES; printf " and ${R_C}${args[2]}${N_C} with${G_C} ${args[3]}${N_C}"; fi
+printf " systemwide.\n"
+
+read -p "Proceed? [Y/n]" -n 1 -r
+
+echo
+
+if ! [[ $REPLY =~ ^[Nn]$ ]]; then
+    printf "Let's do this my brave ${PP_C}g${N_C}${R_C}a${N_C}${OO_C}n${N_C}${Y_C}g${N_C}${G_C}s${N_C}${BB_C}t${N_C}${PP_C}a${N_C}\nWait a bit\n\n"
+
+    # Check ISP4 panel
+    if [[ -f "/usr/local/ispmgr/bin/ispmgr" ]]; then
+        printf "${Y_C}ISP 4${N_C} panel detected"
+        ISP5_RTG=0
+        sleep 2s
+        proceed_without_isp
+    fi
+
+    # Variables
+    if [[ -f "$MGRBIN" ]]; then
+        ISP5_PANEL_FILE="$MGRBIN"
+        ISP5_LITE_ELID=$(timeout 4 $MGRCTL license.info | sed -n -e "s@^.*licid=@@p")
+        ISP5_LITE_LIC=$(timeout 4 $MGRCTL license.info | sed -n -e "s@^.*panel_name=@@p")
+    fi
+
+    mkdir -p /root/support/$TSTAMP
+
+    if [[ -f "$ISP5_PANEL_FILE" ]]; then
+        shopt -s nocasematch
+
+        # processing ISP Manager disabled sites
+        grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} ${MGR_PATH}/var/usrtmp/ispmgr/* | xargs sed -i "s@${args[0]}@${args[1]}@gi" >/dev/null 2>/dev/null
+
+        case "$ISP5_LITE_LIC" in
+            *busines*)
+                printf "\n${R_C}ERROR:${N_C} Business panel license detected\n"
+                ISP5_RTG=0
+                sleep 2s
+                proceed_without_isp
+                ;;
+            *lite*|*pro*|*host*|*trial*)
+                printf "\n${G_C}Lite or trial panel license detected${N_C}\n"
+                ISP5_RTG=1
+                sleep 2s
+		isp_manager_processing
                 ;;
             *)
-                printf "\n${R_C}Unknown panel license version detected: $ISP5_LITE_LIC${N_C}\n"
+                printf "\n${R_C}ERROR:${N_C} Unknown panel license version detected - $ISP5_LITE_LIC\n"
                 ISP5_RTG=0
-                sleep 5s
+		if [[ -f $ISP5_LITE_MAIN_DB_FILE ]]; then
+		        printf "\n${Y_C}WARNING:${N_C} something not good with panel license detection, maybe rescue loaded\n"
+			echo
+		        read -p "Replace in $ISP5_LITE_MAIN_DB_FILE anyway ? [y/N]" -n 1 -r
+		        echo
+		        if ! [[ $REPLY =~ ^[Yy]$ ]]; then
+		            ISP_LIC_BAD=1
+		            proceed_without_isp
+		        fi
+			isp_manager_processing
+		fi
+                sleep 2s
                 proceed_without_isp
                 ;;
         esac
