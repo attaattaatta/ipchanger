@@ -251,7 +251,7 @@ isp_manager_processing() {
                 # ISP Manager in SQLite
                 if [[ -f "$ISP5_LITE_MAIN_DB_FILE" ]]; then
                     if ! which sqlite3; then apt update; apt -y install sqlite3 || yum -y install sqlite3; fi > /dev/null 2>&1
-                    if which sqlite3; then
+                    if which sqlite3 > /dev/null 2>&1; then
 
                         cp -f $ISP5_LITE_MAIN_DB_FILE $ISP5_LITE_MAIN_DB_FILE.$TSTAMP
                         cp -f $ISP5_LITE_MAIN_DB_FILE /root/support/$TSTAMP/
