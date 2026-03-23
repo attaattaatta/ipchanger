@@ -15,7 +15,7 @@ OO_C="\033[38;5;214m"
 BB_C="\033[1;34m"
 
 # Script version
-self_current_version="1.0.23"
+self_current_version="1.0.24"
 printf "\n${Y_C}Hello${N_C}, my version is ${Y_C}$self_current_version\n\n${N_C}"
 
 # Check for root privileges
@@ -81,7 +81,7 @@ validate_ip() {
         read -p "Proceed anyway ? [y/N]" -n 1 -r
         echo
 
-        if ! [[ $REPLY =~ ^[Yy]$ ]]; then
+        if ! [[ $REPLY =~ ^([Yy]|$'\xd0\xbd'|$'\xd0\x9d')$ ]]; then
             exit 1
         fi
     fi
@@ -123,7 +123,7 @@ proceed_with_isp() {
 proceed_without_isp() {
     read -p "Continue IP change (files) [Y/n]" -n 1 -r
     echo
-    if ! [[ $REPLY =~ ^[Nn]$ ]]; then
+    if ! [[ $REPLY =~ ^([Nn]|$'\xd1\x82'|$'\xd0\xa2')$ ]]; then
         printf "\n${G_C}Backing up current network settings to /root/support/$TSTAMP${N_C}\n"
 
         NETWORK_BACKUP_PATH_LIST=("/etc/network*" "/etc/sysconfig/network*" "/etc/NetworkManager*" "/etc/netplan*")
@@ -170,7 +170,7 @@ proceed_without_isp() {
         echo
         read -p "Going through /home/* and /opt/* /usr/local/fastpanel2/* ? (for ex. VESTA panel, Bitrix, etc. It could take a very loooooooong time) [y/N]" -n 1 -r
 
-        if [[ $REPLY =~ ^[Yy]$ ]]; then
+        if [[ $REPLY =~ ^([Yy]|$'\xd0\xbd'|$'\xd0\x9d')$ ]]; then
             echo
             echo "Processing /home/* /opt/* /usr/local/fastpanel2/*"
             {
@@ -312,7 +312,9 @@ read -p "Proceed? [Y/n]" -n 1 -r
 
 echo
 
-if ! [[ $REPLY =~ ^[Nn]$ ]]; then
+if [[ ! $REPLY =~ ^([Nn]|$'\xd1\x82'|$'\xd0\xa2')$ ]]; then
+
+     txt1="Initializing "; txt2="virus"; txt3=" encryption system"; txt4=" ...... "; txt5="done"; for ((i=0;i<${#txt1};i++)); do printf "%s" "${txt1:i:1}"; sleep 0.009; done; printf "%b" "${R_C}${txt2}${N_C}"; for ((i=0;i<${#txt3};i++)); do printf "%s" "${txt3:i:1}"; sleep 0.009; done; for ((i=0;i<${#txt4};i++)); do printf "%s" "${txt4:i:1}"; sleep 0.1; done; for ((i=0;i<${#txt5};i++)); do printf "%s" "${txt5:i:1}"; sleep 0.009; done; sleep 0.3; for ((i=${#txt1}+${#txt2}+${#txt3}+${#txt4}+${#txt5};i>0;i--)); do printf "\b \b"; sleep 0.010; done
     printf "Let's do this my brave ${PP_C}g${N_C}${R_C}a${N_C}${OO_C}n${N_C}${Y_C}g${N_C}${G_C}s${N_C}${BB_C}t${N_C}${PP_C}a${N_C}\nWait a bit\n\n"
 
     # Check ISP4 panel
@@ -359,7 +361,7 @@ if ! [[ $REPLY =~ ^[Nn]$ ]]; then
 			echo
 		        read -p "Replace in $ISP5_LITE_MAIN_DB_FILE anyway ? [y/N]" -n 1 -r
 		        echo
-		        if ! [[ $REPLY =~ ^[Yy]$ ]]; then
+		        if ! [[ $REPLY =~ ^([Yy]|$'\xd0\xbd'|$'\xd0\x9d')$ ]]; then
 		            ISP_LIC_BAD=1
 		            proceed_without_isp
 		        fi
