@@ -6,21 +6,21 @@
 export PATH=$PATH:/usr/sbin:/usr/local/sbin
 
 # Colors
-R_C="\033[0;91m"
-G_C="\033[0;92m"
-N_C="\033[0m"
-Y_C="\033[1;33m"
-PP_C="\033[1;35m"
-OO_C="\033[38;5;214m"
-BB_C="\033[1;34m"
+RC="\033[0;91m"
+GC="\033[0;92m"
+NC="\033[0m"
+YC="\033[1;33m"
+PPC="\033[1;35m"
+OOC="\033[38;5;214m"
+BBC="\033[1;34m"
 
 # Script version
 self_current_version="1.0.25"
-printf "\n${Y_C}Hello${N_C}, my version is ${Y_C}$self_current_version\n\n${N_C}"
+printf "\n${YC}Hello${NC}, my version is ${YC}$self_current_version\n\n${NC}"
 
 # Check for root privileges
 if [[ $EUID -ne 0 ]]; then
-    printf "\n${R_C}ERROR:${N_C} This script must be run as root\n"
+    printf "\n${RC}ERROR:${NC} This script must be run as root\n"
     exit 1
 fi
 
@@ -53,7 +53,7 @@ args=("$@")
 MGR_PATH="/usr/local/mgr5"
 MGRBIN="$MGR_PATH/sbin/mgrctl"
 MGRCTL="$MGR_PATH/sbin/mgrctl -m ispmgr"
-MGR_MAIN_CONF_FILE="$MGR_PATH/etc/ispmgr.conf"
+MGR_MAINCONF_FILE="$MGR_PATH/etc/ispmgr.conf"
 ISP5_LITE_MAIN_DB_FILE="/usr/local/mgr5/etc/ispmgr.db"
 ISP_LIC_BAD="0"
 
@@ -66,7 +66,7 @@ USAGE_INFO=$(echo; printf "Use 2 or 4 arguments."; echo; printf "Usage: $SCRIPT_
 
 # Check arguments
 if [[ "$#" -lt 2 ]] || [[ "$#" -eq 3 ]]; then
-    printf "\n${R_C}ERROR:${N_C} Not enough args\n"
+    printf "\n${RC}ERROR:${NC} Not enough args\n"
     echo "${USAGE_INFO}"
     exit 1
 fi
@@ -77,7 +77,7 @@ validate_ip() {
     IFS='.' read -r i1 i2 i3 i4 <<< "$arg"
 
     if [[ ! $arg =~ $valid_ip_regex ]] || (( i1 > 255 || i2 > 255 || i3 > 255 || i4 > 255 )); then
-        printf "\n${Y_C}WARNING:${N_C} ${arg} does not look like an valid IPv4 address.\n"
+        printf "\n${YC}WARNING:${NC} ${arg} does not look like an valid IPv4 address.\n"
         read -p "Proceed anyway ? [y/N]" -n 1 -r
         echo
 
@@ -113,22 +113,22 @@ backup () {
 					backup_item_size=$(\du -sm "${backup_item}" &>/dev/null | awk '{print $1}')
 
 					if [[ "${backup_item_size}" -lt 2000 ]]; then
-						printf "Processing ${G_C}backup${N_C} ${BACKUP_DIR}${backup_item}"
+						printf "Processing ${GC}backup${NC} ${BACKUP_DIR}${backup_item}"
 
 						if { rsync -RaHAXSlq "${backup_item}/" "${BACKUP_DIR}/" && exec_command="rsync"; } &>/dev/null || { \cp -Rfp --parents --reflink=auto "${backup_item}" "${BACKUP_DIR}"; \cp -Rfp --parents --reflink=auto "${backup_item}" "${BACKUP_DIR}" && chmod --reference="${backup_item}" "${BACKUP_DIR}${backup_item}" && exec_command="cp"; } &>/dev/null; then
-							printf " with $exec_command command - ${G_C}OK${N_C}\n"
+							printf " with $exec_command command - ${GC}OK${NC}\n"
 						else
-							printf " with $exec_command command - ${R_C}FAIL${N_C}\n"
+							printf " with $exec_command command - ${RC}FAIL${NC}\n"
 						fi
 					else
-						printf "${Y_C}BACKUP WARNING:${N_C} ${backup_item} / ${backup_item_size} - more than 2G, backup was skipped\n"
+						printf "${YC}BACKUP WARNING:${NC} ${backup_item} / ${backup_item_size} - more than 2G, backup was skipped\n"
 					fi
 				fi
 			done
 
 			\cp -Rfp --parents --reflink=auto "/opt/php"*"/etc/" "$BACKUP_DIR" &> /dev/null
 		else
-			printf "${Y_C}BACKUP ERROR:${N_C} Cannot create $BACKUP_ROOT_DIR\n\n"
+			printf "${YC}BACKUP ERROR:${NC} Cannot create $BACKUP_ROOT_DIR\n\n"
 		        read -p "Proceed anyway ? [y/N]" -n 1 -r
 		        echo
 		
@@ -138,7 +138,7 @@ backup () {
 		fi
 
 	else
-		printf "${Y_C}BACKUP ERROR:${N_C} Low free space\n\n"
+		printf "${YC}BACKUP ERROR:${NC} Low free space\n\n"
 	        read -p "Proceed anyway ? [y/N]" -n 1 -r
 	        echo
 	
@@ -151,10 +151,10 @@ backup () {
 # Update PowerDNS MySQL DB
 isp_pdns_ipchanger() {
     if [[ -f "/usr/sbin/pdns_server" ]]; then
-        printf "\n${G_C}Updating MySQL PowerDNS DB pdns ${N_C}"
+        printf "\n${GC}Updating MySQL PowerDNS DB pdns ${NC}"
         mysql -D pdns -e "update records set content=replace(content,'${args[0]}', '${args[1]}');" >/dev/null 2>/dev/null
         mysql -D powerdns -e "update records set content=replace(content,'${args[0]}', '${args[1]}');" >/dev/null 2>/dev/null
-        printf " - ${G_C}OK${N_C}\n"
+        printf " - ${GC}OK${NC}\n"
     fi
 }
 
@@ -181,21 +181,21 @@ proceed_without_isp() {
     echo
     if ! [[ $REPLY =~ ^([Nn]|$'\xd1\x82'|$'\xd0\xa2')$ ]]; then
 
-        printf "\n${G_C}Current network settings:${N_C}\n\n"
+        printf "\n${GC}Current network settings:${NC}\n\n"
         ip a
         echo
         ip r
 
-        printf "\n${G_C}Starting IP change systemwide${N_C}\n"
+        printf "\n${GC}Starting IP change systemwide${NC}\n"
 
         # Network manager check
         if which nmcli &> /dev/null && [[ ! -z "$(ls -A '/etc/NetworkManager/system-connections/')" ]]; then
-            printf "\n${G_C}NetworkManager detected${N_C}\nConfiguration in /etc/NetworkManager/system-connections/\n"
+            printf "\n${GC}NetworkManager detected${NC}\nConfiguration in /etc/NetworkManager/system-connections/\n"
         fi
 
         # Netplan check
         if which netplan &> /dev/null && [[ ! -z "$(ls -A '/etc/netplan/')" ]]; then
-            printf "\n${G_C}Netplan detected${N_C}\nConfiguration in /etc/netplan/\n"
+            printf "\n${GC}Netplan detected${NC}\nConfiguration in /etc/netplan/\n"
         fi
 
         IP_CHANGE_PATH_LIST=("/etc/*" "/var/named/*" "/var/lib/powerdns/*" "/usr/local/mgr5/etc/ihttpd.conf")
@@ -231,41 +231,41 @@ proceed_without_isp() {
         fi
 
         # If gateway change is needed
-        if [[ $GATEWAY_CHANGE == "YES" ]]; then
-            printf "\n${G_C}Changing gateway address${N_C}\n"
+        if [[ $GATEWAYCHANGE == "YES" ]]; then
+            printf "\n${GC}Changing gateway address${NC}\n"
 
-            GATEWAY_CONFIG_PATH_LIST=("/etc/NetworkManager/system-connections/*" "/etc/netplan/*" "/etc/network/interfaces" "/etc/network/interfaces.d/*" "/etc/sysconfig/network*")
+            GATEWAYCONFIG_PATH_LIST=("/etc/NetworkManager/system-connections/*" "/etc/netplan/*" "/etc/network/interfaces" "/etc/network/interfaces.d/*" "/etc/sysconfig/network*")
 
-            for gateway_config_item in "${GATEWAY_CONFIG_PATH_LIST[@]}"; do
+            for gateway_config_item in "${GATEWAYCONFIG_PATH_LIST[@]}"; do
                 echo "Processing ${gateway_config_item}"
                 grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[2]} ${gateway_config_item} | xargs sed -i "s@${args[2]}@${args[3]}@gi" &> /dev/null
             done
 
-            GATEWAY_CHANGED=YES
-            unset GATEWAY_CHANGE
+            GATEWAYCHANGED=YES
+            unset GATEWAYCHANGE
         else
-            printf "\n${Y_C}3 and 4 script's arguments were empty ${N_C}\n"
+            printf "\n${YC}3 and 4 script's arguments were empty ${NC}\n"
             printf "If default gateway IP address / subnet mask need to be changed, do it manually\n"
         fi
 
         if [[ "$ISP5_RTG" = "1" ]]; then
-            printf "\n${Y_C}To update ISP Manager license, run:${N_C}\ncurl -X POST -F \"func=soft.edit\" -F \"elid=$ISP5_LITE_ELID\" -F \"out=text\" -F \"ip=${args[1]}\" -F \"sok=ok\" -ks \"https://api.ispmanager.com/billmgr\" -F \"authinfo=support@provider:password\"\n"
+            printf "\n${YC}To update ISP Manager license, run:${NC}\ncurl -X POST -F \"func=soft.edit\" -F \"elid=$ISP5_LITE_ELID\" -F \"out=text\" -F \"ip=${args[1]}\" -F \"sok=ok\" -ks \"https://api.ispmanager.com/billmgr\" -F \"authinfo=support@provider:password\"\n"
 
         fi
 
         echo
 
-        printf "${G_C}${args[0]} -> ${args[1]} was changed${N_C}\n"
-        if [[ $GATEWAY_CHANGED == "YES" ]]; then
-            printf "${G_C}Gateway IP ${args[2]} -> ${args[3]} was changed${N_C}\n"
-            printf "\n${Y_C}You should check subnet mask correctness ${N_C}\n"
+        printf "${GC}${args[0]} -> ${args[1]} was changed${NC}\n"
+        if [[ $GATEWAYCHANGED == "YES" ]]; then
+            printf "${GC}Gateway IP ${args[2]} -> ${args[3]} was changed${NC}\n"
+            printf "\n${YC}You should check subnet mask correctness ${NC}\n"
         fi
 
-        printf "Adjust the network ${Y_C}mask${N_C} if necessary and reboot this system (${Y_C}run init 6${N_C}) manually to apply all changes\n"
+        printf "Adjust the network ${YC}mask${NC} if necessary and reboot this system (${YC}run init 6${NC}) manually to apply all changes\n"
 
-        unset GATEWAY_CHANGED
+        unset GATEWAYCHANGED
     else
-        printf "\n${G_C}Nothing was done. Come back, bro!${N_C}\n"
+        printf "\n${GC}Nothing was done. Come back, bro!${NC}\n"
         exit 1
     fi
 }
@@ -280,7 +280,7 @@ isp_manager_processing() {
 
                     if which sqlite3 > /dev/null 2>&1; then
 
-                        printf "\n${G_C}DB backup${N_C} - ${BACKUP_DIR}/usr/local/mgr5/etc/ispmgr.db \n"
+                        printf "\n${GC}DB backup${NC} - ${BACKUP_DIR}/usr/local/mgr5/etc/ispmgr.db \n"
 
                         printf "\nUpdating db file (changing ${args[0]} with ${args[1]})\n"
 
@@ -292,10 +292,10 @@ isp_manager_processing() {
                         sqlite3 $ISP5_LITE_MAIN_DB_FILE "update db_mysql_servers set hostname = '${args[1]}' where hostname = '${args[0]}';"
                         sqlite3 $ISP5_LITE_MAIN_DB_FILE "delete from ipaddr where name='${args[0]}';"
 
-                        printf "\n${G_C}Update completed${N_C}\n"
+                        printf "\n${GC}Update completed${NC}\n"
 
                     else
-                        printf "\n${R_C}ERROR:${N_C} sqlite3 not found and cannot be installed. Install it manually and restart script.\n\n"
+                        printf "\n${RC}ERROR:${NC} sqlite3 not found and cannot be installed. Install it manually and restart script.\n\n"
 			return 1
                     fi
                 fi
@@ -304,9 +304,9 @@ isp_manager_processing() {
                 if mysql -D ispmgr -e "select * from webdomain_ipaddr;" >/dev/null 2>/dev/null; then
                     if mysqldump --insert-ignore --complete-insert --events --routines --triggers --single-transaction --max_allowed_packet=1G --quick --lock-tables=false ispmgr > /root/support/$TSTAMP/ispmgr.sql; then
 
-                        printf "\n${G_C}DB backup file - /root/support/$TSTAMP/ispmgr.sql${N_C}\n"
+                        printf "\n${GC}DB backup file - /root/support/$TSTAMP/ispmgr.sql${NC}\n"
 
-                        printf "\n${G_C}Updating MySQL DB (changing ${args[0]} with ${args[1]})${N_C}\n"
+                        printf "\n${GC}Updating MySQL DB (changing ${args[0]} with ${args[1]})${NC}\n"
 
                         mysql -v -D ispmgr -e "update webdomain_ipaddr set value='${args[1]}' where value='${args[0]}';"
                         mysql -v -D ispmgr -e "update emaildomain set ip='${args[1]}' where ip='${args[0]}';"
@@ -316,10 +316,10 @@ isp_manager_processing() {
                         mysql -v -D ispmgr -e "update db_mysql_servers set hostname = '${args[1]}' where hostname = '${args[0]}';" 
                         mysql -v -D ispmgr -e "delete from ipaddr where name='${args[0]}';"
 
-                        printf "\n${G_C}Update completed${N_C}\n"
+                        printf "\n${GC}Update completed${NC}\n"
 
                     else
-                        printf "\n${R_C}ERROR:${N_C} MySQL DB ispmgr backup has failed. Update skipped\n"
+                        printf "\n${RC}ERROR:${NC} MySQL DB ispmgr backup has failed. Update skipped\n"
                     fi
 	fi
 
@@ -328,24 +328,24 @@ isp_manager_processing() {
         proceed_without_isp
 }
 
-printf "${Y_C}This will change${R_C} ${args[0]}${N_C} with${G_C} ${args[1]}${N_C}"
-if [[ ! -z "${3}" ]]; then GATEWAY_CHANGE=YES; printf " and ${R_C}${args[2]}${N_C} with${G_C} ${args[3]}${N_C}"; fi
+printf "${YC}This will change${RC} ${args[0]}${NC} with${GC} ${args[1]}${NC}"
+if [[ ! -z "${3}" ]]; then GATEWAYCHANGE=YES; printf " and ${RC}${args[2]}${NC} with${GC} ${args[3]}${NC}"; fi
 printf " systemwide.\n"
 
 read -p "Proceed? [Y/n]" -n 1 -r
 echo
 if [[ ! $REPLY =~ ^([Nn]|$'\xd1\x82'|$'\xd0\xa2')$ ]]; then
 
-     txt1="Let's do this my brave "; txt2="g"; txt3="a"; txt4="n"; txt5="g"; txt6="s"; txt7="t"; txt8="a"; for ((i=0;i<${#txt1};i++)); do printf "%s" "${txt1:i:1}"; sleep 0.009; done; printf "%b" "${PP_C}${txt2}${N_C}"; sleep 0.009; printf "%b" "${R_C}${txt3}${N_C}"; sleep 0.009; printf "%b" "${OO_C}${txt4}${N_C}"; sleep 0.009; printf "%b" "${Y_C}${txt5}${N_C}"; sleep 0.009; printf "%b" "${G_C}${txt6}${N_C}"; sleep 0.009; printf "%b" "${BB_C}${txt7}${N_C}"; sleep 0.009; printf "%b" "${PP_C}${txt8}${N_C}"; sleep 0.009; sleep 0.3; total_len=$((${#txt1}+${#txt2}+${#txt3}+${#txt4}+${#txt5}+${#txt6}+${#txt7}+${#txt8})); for ((i=total_len;i>0;i--)); do printf "\b \b"; sleep 0.010; done
+     txt1="Let's do this my brave "; txt2="g"; txt3="a"; txt4="n"; txt5="g"; txt6="s"; txt7="t"; txt8="a"; for ((i=0;i<${#txt1};i++)); do printf "%s" "${txt1:i:1}"; sleep 0.009; done; printf "%b" "${PPC}${txt2}${NC}"; sleep 0.009; printf "%b" "${RC}${txt3}${NC}"; sleep 0.009; printf "%b" "${OOC}${txt4}${NC}"; sleep 0.009; printf "%b" "${YC}${txt5}${NC}"; sleep 0.009; printf "%b" "${GC}${txt6}${NC}"; sleep 0.009; printf "%b" "${BBC}${txt7}${NC}"; sleep 0.009; printf "%b" "${PPC}${txt8}${NC}"; sleep 0.009; sleep 0.3; total_len=$((${#txt1}+${#txt2}+${#txt3}+${#txt4}+${#txt5}+${#txt6}+${#txt7}+${#txt8})); for ((i=total_len;i>0;i--)); do printf "\b \b"; sleep 0.010; done
 
-     txt1="Initializing "; txt2="virus"; txt3=" encryption system"; txt4=" ...... "; txt5="done"; for ((i=0;i<${#txt1};i++)); do printf "%s" "${txt1:i:1}"; sleep 0.009; done; printf "%b" "${R_C}${txt2}${N_C}"; for ((i=0;i<${#txt3};i++)); do printf "%s" "${txt3:i:1}"; sleep 0.009; done; for ((i=0;i<${#txt4};i++)); do printf "%s" "${txt4:i:1}"; sleep 0.1; done; for ((i=0;i<${#txt5};i++)); do printf "%s" "${txt5:i:1}"; sleep 0.009; done; sleep 0.3; for ((i=${#txt1}+${#txt2}+${#txt3}+${#txt4}+${#txt5};i>0;i--)); do printf "\b \b"; sleep 0.010; done
+     txt1="Initializing "; txt2="virus"; txt3=" encryption system"; txt4=" ...... "; txt5="done"; for ((i=0;i<${#txt1};i++)); do printf "%s" "${txt1:i:1}"; sleep 0.009; done; printf "%b" "${RC}${txt2}${NC}"; for ((i=0;i<${#txt3};i++)); do printf "%s" "${txt3:i:1}"; sleep 0.009; done; for ((i=0;i<${#txt4};i++)); do printf "%s" "${txt4:i:1}"; sleep 0.1; done; for ((i=0;i<${#txt5};i++)); do printf "%s" "${txt5:i:1}"; sleep 0.009; done; sleep 0.3; for ((i=${#txt1}+${#txt2}+${#txt3}+${#txt4}+${#txt5};i>0;i--)); do printf "\b \b"; sleep 0.010; done
 
     # Doing backup
     backup
 
     # Check ISP4 panel
     if [[ -f "/usr/local/ispmgr/bin/ispmgr" ]]; then
-        printf "${Y_C}ISP 4${N_C} panel detected"
+        printf "${YC}ISP 4${NC} panel detected"
         ISP5_RTG=0
         sleep 2s
         proceed_without_isp
@@ -368,22 +368,22 @@ if [[ ! $REPLY =~ ^([Nn]|$'\xd1\x82'|$'\xd0\xa2')$ ]]; then
 
         case "$ISP5_LITE_LIC" in
             *busines*)
-                printf "\n${R_C}ERROR:${N_C} Business panel license detected\n"
+                printf "\n${RC}ERROR:${NC} Business panel license detected\n"
                 ISP5_RTG=0
                 sleep 2s
                 proceed_without_isp
                 ;;
             *lite*|*pro*|*host*|*trial*)
-                printf "\n${G_C}Lite or trial${N_C} panel license detected\n"
+                printf "\n${GC}Lite or trial${NC} panel license detected\n"
                 ISP5_RTG=1
                 sleep 2s
 		isp_manager_processing
                 ;;
             *)
-                printf "\n${R_C}ERROR:${N_C} Unknown panel license version detected - $ISP5_LITE_LIC\n"
+                printf "\n${RC}ERROR:${NC} Unknown panel license version detected - $ISP5_LITE_LIC\n"
                 ISP5_RTG=0
 		if [[ -f $ISP5_LITE_MAIN_DB_FILE ]]; then
-		        printf "\n${Y_C}WARNING:${N_C} something not good with panel license detection, maybe rescue loaded\n"
+		        printf "\n${YC}WARNING:${NC} something not good with panel license detection, maybe rescue loaded\n"
 			echo
 		        read -p "Replace in $ISP5_LITE_MAIN_DB_FILE anyway ? [y/N]" -n 1 -r
 		        echo
@@ -398,10 +398,10 @@ if [[ ! $REPLY =~ ^([Nn]|$'\xd1\x82'|$'\xd0\xa2')$ ]]; then
                 ;;
         esac
     else
-        printf "${Y_C}No ISP5 panel detected${N_C}\n"
+        printf "${YC}No ISP5 panel detected${NC}\n"
         proceed_without_isp
     fi
 else
-    printf "\n${G_C}Nothing was done. Come back, bro!${N_C}\n"
+    printf "\n${GC}Nothing was done. Come back, bro!${NC}\n"
     exit 0
 fi
