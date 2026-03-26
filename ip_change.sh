@@ -93,7 +93,7 @@ for arg in "$@"; do
 done
 
 # Backup function
-backup () {
+backup() {
 	local BACKUP_ROOT_DIR="/root/support"
 	local DIR_LIST=("/etc/" "/usr/local/mgr5/etc/" "/var/spool/cron/" "/var/named/" "/var/lib/powerdns/")
 
@@ -368,13 +368,13 @@ if [[ ! $REPLY =~ ^([Nn]|$'\xd1\x82'|$'\xd0\xa2')$ ]]; then
 
         case "$ISP5_LITE_LIC" in
             *busines*)
-                printf "\n${RC}ERROR:${NC} Business panel license detected\n"
+                printf "\n${RC}ERROR:${NC} ISPmanager Business panel license detected\n"
                 ISP5_RTG=0
                 sleep 2s
                 proceed_without_isp
                 ;;
             *lite*|*pro*|*host*|*trial*)
-                printf "\n${GC}Lite or trial${NC} panel license detected\n"
+                printf "\n${GC}Lite or trial${NC} ISPmanager panel license detected\n"
                 ISP5_RTG=1
                 sleep 2s
 		isp_manager_processing
