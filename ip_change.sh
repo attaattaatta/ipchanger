@@ -15,7 +15,7 @@ OO_C="\033[38;5;214m"
 BB_C="\033[1;34m"
 
 # Script version
-self_current_version="1.0.24"
+self_current_version="1.0.25"
 printf "\n${Y_C}Hello${N_C}, my version is ${Y_C}$self_current_version\n\n${N_C}"
 
 # Check for root privileges
@@ -92,6 +92,60 @@ for arg in "$@"; do
     validate_ip "$arg"
 done
 
+# Backup function
+backup () {
+	local BACKUP_ROOT_DIR="/root/support"
+	local DIR_LIST=("/etc/" "/usr/local/mgr5/etc/" "/var/spool/cron/" "/var/named/" "/var/lib/powerdns/")
+	local BACKUP_DIR="${BACKUP_ROOT_DIR}/$(date '+%d-%b-%Y-%H-%M-%Z')"
+	local ROOT_DF=$(df "$BACKUP_ROOT_DIR" | sed 1d | awk '{print $5}' | sed 's@%@@gi')
+	local exec_command=""
+
+	if [[ "$ROOT_DF" -le 95 ]]; then
+
+		if \mkdir -p "$BACKUP_ROOT_DIR"; then
+
+			\mkdir -p "$BACKUP_DIR" &> /dev/null
+			for backup_item in "${DIR_LIST[@]}"
+			do
+				if [[ -d "$backup_item" ]]; then
+					backup_item_size=$(\du -sm "${backup_item}" &>/dev/null | awk '{print $1}')
+
+					if [[ "${backup_item_size}" -lt 2000 ]]; then
+						printf "Processing ${G_C}backup${N_C} ${BACKUP_DIR}${backup_item}"
+
+						if { rsync -RaHAXSlq "${backup_item}/" "${BACKUP_DIR}/" && exec_command="rsync"; } &>/dev/null || { \cp -Rfp --parents --reflink=auto "${backup_item}" "${BACKUP_DIR}"; \cp -Rfp --parents --reflink=auto "${backup_item}" "${BACKUP_DIR}" && chmod --reference="${backup_item}" "${BACKUP_DIR}${backup_item}" && exec_command="cp"; } &>/dev/null; then
+							printf " with $exec_command command - ${G_C}OK${N_C}\n"
+						else
+							printf " with $exec_command command - ${R_C}FAIL${N_C}\n"
+						fi
+					else
+						printf "${Y_C}BACKUP WARNING:${N_C} ${backup_item} / ${backup_item_size} - more than 2G, backup was skipped\n"
+					fi
+				fi
+			done
+
+			\cp -Rfp --parents --reflink=auto "/opt/php"*"/etc/" "$BACKUP_DIR" &> /dev/null
+		else
+			printf "${Y_C}BACKUP ERROR:${N_C} Cannot create $BACKUP_ROOT_DIR\n\n"
+		        read -p "Proceed anyway ? [y/N]" -n 1 -r
+		        echo
+		
+		        if ! [[ $REPLY =~ ^([Yy]|$'\xd0\xbd'|$'\xd0\x9d')$ ]]; then
+		            exit 1
+		        fi
+		fi
+
+	else
+		printf "${Y_C}BACKUP ERROR:${N_C} Low free space\n\n"
+	        read -p "Proceed anyway ? [y/N]" -n 1 -r
+	        echo
+	
+	        if ! [[ $REPLY =~ ^([Yy]|$'\xd0\xbd'|$'\xd0\x9d')$ ]]; then
+	            exit 1
+	        fi
+	fi
+}
+
 # Update PowerDNS MySQL DB
 isp_pdns_ipchanger() {
     if [[ -f "/usr/sbin/pdns_server" ]]; then
@@ -104,16 +158,16 @@ isp_pdns_ipchanger() {
 
 # ISP Manager changes
 proceed_with_isp() {
-    printf "\n${G_C}Setting ihttpd listen all ips${N_C}\n"
+    printf "\nSetting ihttpd listen all ips\n"
     if [[ $ISP_LIC_BAD = "0" ]];then
         $ISP5_PANEL_FILE -m core ihttpd.edit ip=any elid=${args[0]} sok=ok >/dev/null 2>/dev/null
     fi
 
-    printf "\n${G_C}Cleaning ISP Manager cache${N_C}\n"
+    printf "\nCleaning ISP Manager cache\n"
     rm -rf /usr/local/mgr5/var/.xmlcache/*
     rm -f /usr/local/mgr5/etc/ispmgr.lic /usr/local/mgr5/etc/ispmgr.lic.lock /usr/local/mgr5/var/.db.cache.*
 
-    printf "\n${G_C}Restarting ISP Manager${N_C}\n\n"
+    printf "\nRestarting ISP Manager\n\n"
     if [[ $ISP_LIC_BAD = "0" ]];then
         $ISP5_PANEL_FILE -m ispmgr -R
     fi
@@ -124,13 +178,6 @@ proceed_without_isp() {
     read -p "Continue IP change (files) [Y/n]" -n 1 -r
     echo
     if ! [[ $REPLY =~ ^([Nn]|$'\xd1\x82'|$'\xd0\xa2')$ ]]; then
-        printf "\n${G_C}Backing up current network settings to /root/support/$TSTAMP${N_C}\n"
-
-        NETWORK_BACKUP_PATH_LIST=("/etc/network*" "/etc/sysconfig/network*" "/etc/NetworkManager*" "/etc/netplan*")
-
-        for network_backup_item in "${NETWORK_BACKUP_PATH_LIST[@]}"; do
-            cp -Rf ${network_backup_item} /root/support/$TSTAMP/ >/dev/null 2>/dev/null
-        done
 
         printf "\n${G_C}Current network settings:${N_C}\n\n"
         ip a
@@ -229,13 +276,13 @@ proceed_without_isp() {
 
         echo
 
-        printf "${Y_C}${args[0]} -> ${args[1]} was changed${N_C}\n"
+        printf "${G_C}${args[0]} -> ${args[1]} was changed${N_C}\n"
         if [[ $GATEWAY_CHANGED == "YES" ]]; then
             printf "${G_C}Gateway IP ${args[2]} -> ${args[3]} was changed${N_C}\n"
             printf "\n${Y_C}You should check subnet mask correctness ${N_C}\n"
         fi
 
-        printf "Adjust the network mask if necessary and reboot this system (${Y_C}run init 6${N_C}) manually to apply all changes\n"
+        printf "Adjust the network ${Y_C}mask${N_C} if necessary and reboot this system (${Y_C}run init 6${N_C}) manually to apply all changes\n"
 
         unset GATEWAY_CHANGED
     else
@@ -247,31 +294,30 @@ proceed_without_isp() {
 # ISP panel proccessing
 isp_manager_processing() {
 
-
                 # ISP Manager in SQLite
                 if [[ -f "$ISP5_LITE_MAIN_DB_FILE" ]]; then
+
                     if ! which sqlite3; then apt update; apt -y install sqlite3 || yum -y install sqlite3; fi > /dev/null 2>&1
+
                     if which sqlite3 > /dev/null 2>&1; then
 
-                        cp -f $ISP5_LITE_MAIN_DB_FILE $ISP5_LITE_MAIN_DB_FILE.$TSTAMP
-                        cp -f $ISP5_LITE_MAIN_DB_FILE /root/support/$TSTAMP/
-                        printf "\n${G_C}DB backup file${N_C} - $ISP5_LITE_MAIN_DB_FILE.$TSTAMP (and also in /root/support/$TSTAMP/)\n"
+                        if \cp -f $ISP5_LITE_MAIN_DB_FILE $ISP5_LITE_MAIN_DB_FILE.$TSTAMP || cp -f $ISP5_LITE_MAIN_DB_FILE /root/support/$TSTAMP/; then
+                            printf "\n${G_C}DB backup file${N_C} - $ISP5_LITE_MAIN_DB_FILE.$TSTAMP (and also in /root/support/$TSTAMP/)\n"
 
-                        printf "\n${G_C}Updating db file (changing ${args[0]} with ${args[1]})${N_C}\n"
+                            printf "\nUpdating db file (changing ${args[0]} with ${args[1]})\n"
 
-                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update webdomain_ipaddr set value='${args[1]}' where value='${args[0]}';"
-                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update emaildomain set ip='${args[1]}' where ip='${args[0]}';"
-                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update domain_auto set name=replace(name, '${args[0]}', '${args[1]}') where name like '%${args[0]}%';"
-                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update global_index set field_value='${args[1]}' where field_value='${args[0]}';"
-                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update db_server set host = '${args[1]}' || substr(host, instr(host, ':')) where host like '${args[0]}:%';"
-                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update db_mysql_servers set hostname = '${args[1]}' where hostname = '${args[0]}';"
-                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "delete from ipaddr where name='${args[0]}';"
+                            sqlite3 $ISP5_LITE_MAIN_DB_FILE "update webdomain_ipaddr set value='${args[1]}' where value='${args[0]}';"
+                            sqlite3 $ISP5_LITE_MAIN_DB_FILE "update emaildomain set ip='${args[1]}' where ip='${args[0]}';"
+                            sqlite3 $ISP5_LITE_MAIN_DB_FILE "update domain_auto set name=replace(name, '${args[0]}', '${args[1]}') where name like '%${args[0]}%';"
+                            sqlite3 $ISP5_LITE_MAIN_DB_FILE "update global_index set field_value='${args[1]}' where field_value='${args[0]}';"
+                            sqlite3 $ISP5_LITE_MAIN_DB_FILE "update db_server set host = '${args[1]}' || substr(host, instr(host, ':')) where host like '${args[0]}:%';"
+                            sqlite3 $ISP5_LITE_MAIN_DB_FILE "update db_mysql_servers set hostname = '${args[1]}' where hostname = '${args[0]}';"
+                            sqlite3 $ISP5_LITE_MAIN_DB_FILE "delete from ipaddr where name='${args[0]}';"
 
-                        printf "\n${G_C}Update completed${N_C}\n"
-
-                        isp_pdns_ipchanger
-                        proceed_with_isp
-                        proceed_without_isp
+                            printf "\n${G_C}Update completed${N_C}\n"
+                        else
+                            printf "\n${R_C}ERROR:${N_C} SQLite DB ispmgr backup has failed. Update skipped\n"
+                        fi
                     else
                         printf "\n${R_C}ERROR:${N_C} sqlite3 not found and cannot be installed. Install it manually and restart script.\n\n"
 			return 1
@@ -280,28 +326,30 @@ isp_manager_processing() {
 
                 # ISP Manager in MySQL
                 if mysql -D ispmgr -e "select * from webdomain_ipaddr;" >/dev/null 2>/dev/null; then
-                    mysqldump --insert-ignore --complete-insert --events --routines --triggers --single-transaction --max_allowed_packet=1G --quick --lock-tables=false ispmgr > /root/support/$TSTAMP/ispmgr.sql
-                    if [[ $? -eq 0 ]]; then
+                    if mysqldump --insert-ignore --complete-insert --events --routines --triggers --single-transaction --max_allowed_packet=1G --quick --lock-tables=false ispmgr > /root/support/$TSTAMP/ispmgr.sql; then
+
                         printf "\n${G_C}DB backup file - /root/support/$TSTAMP/ispmgr.sql${N_C}\n"
+
+                        printf "\n${G_C}Updating MySQL DB (changing ${args[0]} with ${args[1]})${N_C}\n"
+
+                        mysql -v -D ispmgr -e "update webdomain_ipaddr set value='${args[1]}' where value='${args[0]}';"
+                        mysql -v -D ispmgr -e "update emaildomain set ip='${args[1]}' where ip='${args[0]}';"
+                        mysql -v -D ispmgr -e "update domain_auto set name=replace(name, '${args[0]}', '${args[1]}') where name like '%${args[0]}%';"
+                        mysql -v -D ispmgr -e "update global_index set field_value='${args[1]}' where field_value='${args[0]}';" 
+                        mysql -v -D ispmgr -e "update db_server set host = concat('${args[1]}', substring(host, locate(':', host))) where host like '${args[0]}:%';" 
+                        mysql -v -D ispmgr -e "update db_mysql_servers set hostname = '${args[1]}' where hostname = '${args[0]}';" 
+                        mysql -v -D ispmgr -e "delete from ipaddr where name='${args[0]}';"
+
+                        printf "\n${G_C}Update completed${N_C}\n"
+
                     else
-                        printf "\n${R_C}ERROR:${N_C} MySQL DB ispmgr backup has failed\n"
+                        printf "\n${R_C}ERROR:${N_C} MySQL DB ispmgr backup has failed. Update skipped\n"
                     fi
-                    printf "\n${G_C}Updating MySQL DB (changing ${args[0]} with ${args[1]})${N_C}\n"
-
-                    mysql -D ispmgr -e "update webdomain_ipaddr set value='${args[1]}' where value='${args[0]}';"
-                    mysql -D ispmgr -e "update emaildomain set ip='${args[1]}' where ip='${args[0]}';"
-                    mysql -D ispmgr -e "update domain_auto set name=replace(name, '${args[0]}', '${args[1]}') where name like '%${args[0]}%';"
-                    mysql -D ispmgr -e "update global_index set field_value='${args[1]}' where field_value='${args[0]}';"
-                    mysql -D ispmgr -e "update db_server set host = concat('${args[1]}', substring(host, locate(':', host))) where host like '${args[0]}:%';"
-                    mysql -D ispmgr -e "update db_mysql_servers set hostname = '${args[1]}' where hostname = '${args[0]}';"
-                    mysql -D ispmgr -e "delete from ipaddr where name='${args[0]}';"
-
-                    printf "\n${G_C}Update completed${N_C}\n"
-
-                    isp_pdns_ipchanger
-                    proceed_with_isp
-                    proceed_without_isp
 	fi
+
+        isp_pdns_ipchanger
+        proceed_with_isp
+        proceed_without_isp
 }
 
 printf "${Y_C}This will change${R_C} ${args[0]}${N_C} with${G_C} ${args[1]}${N_C}"
@@ -309,14 +357,15 @@ if [[ ! -z "${3}" ]]; then GATEWAY_CHANGE=YES; printf " and ${R_C}${args[2]}${N_
 printf " systemwide.\n"
 
 read -p "Proceed? [Y/n]" -n 1 -r
-
 echo
-
 if [[ ! $REPLY =~ ^([Nn]|$'\xd1\x82'|$'\xd0\xa2')$ ]]; then
 
      txt1="Let's do this my brave "; txt2="g"; txt3="a"; txt4="n"; txt5="g"; txt6="s"; txt7="t"; txt8="a"; for ((i=0;i<${#txt1};i++)); do printf "%s" "${txt1:i:1}"; sleep 0.009; done; printf "%b" "${PP_C}${txt2}${N_C}"; sleep 0.009; printf "%b" "${R_C}${txt3}${N_C}"; sleep 0.009; printf "%b" "${OO_C}${txt4}${N_C}"; sleep 0.009; printf "%b" "${Y_C}${txt5}${N_C}"; sleep 0.009; printf "%b" "${G_C}${txt6}${N_C}"; sleep 0.009; printf "%b" "${BB_C}${txt7}${N_C}"; sleep 0.009; printf "%b" "${PP_C}${txt8}${N_C}"; sleep 0.009; sleep 0.3; total_len=$((${#txt1}+${#txt2}+${#txt3}+${#txt4}+${#txt5}+${#txt6}+${#txt7}+${#txt8})); for ((i=total_len;i>0;i--)); do printf "\b \b"; sleep 0.010; done
 
      txt1="Initializing "; txt2="virus"; txt3=" encryption system"; txt4=" ...... "; txt5="done"; for ((i=0;i<${#txt1};i++)); do printf "%s" "${txt1:i:1}"; sleep 0.009; done; printf "%b" "${R_C}${txt2}${N_C}"; for ((i=0;i<${#txt3};i++)); do printf "%s" "${txt3:i:1}"; sleep 0.009; done; for ((i=0;i<${#txt4};i++)); do printf "%s" "${txt4:i:1}"; sleep 0.1; done; for ((i=0;i<${#txt5};i++)); do printf "%s" "${txt5:i:1}"; sleep 0.009; done; sleep 0.3; for ((i=${#txt1}+${#txt2}+${#txt3}+${#txt4}+${#txt5};i>0;i--)); do printf "\b \b"; sleep 0.010; done
+
+    # Doing backup
+    backup
 
     # Check ISP4 panel
     if [[ -f "/usr/local/ispmgr/bin/ispmgr" ]]; then
@@ -349,7 +398,7 @@ if [[ ! $REPLY =~ ^([Nn]|$'\xd1\x82'|$'\xd0\xa2')$ ]]; then
                 proceed_without_isp
                 ;;
             *lite*|*pro*|*host*|*trial*)
-                printf "\n${G_C}Lite or trial panel license detected${N_C}\n"
+                printf "\n${G_C}Lite or trial${N_C} panel license detected\n"
                 ISP5_RTG=1
                 sleep 2s
 		isp_manager_processing
