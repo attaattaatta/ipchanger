@@ -314,8 +314,9 @@ echo
 
 if [[ ! $REPLY =~ ^([Nn]|$'\xd1\x82'|$'\xd0\xa2')$ ]]; then
 
+     txt1="Let's do this my brave "; txt2="g"; txt3="a"; txt4="n"; txt5="g"; txt6="s"; txt7="t"; txt8="a"; for ((i=0;i<${#txt1};i++)); do printf "%s" "${txt1:i:1}"; sleep 0.009; done; printf "%b" "${PP_C}${txt2}${N_C}"; sleep 0.009; printf "%b" "${R_C}${txt3}${N_C}"; sleep 0.009; printf "%b" "${OO_C}${txt4}${N_C}"; sleep 0.009; printf "%b" "${Y_C}${txt5}${N_C}"; sleep 0.009; printf "%b" "${G_C}${txt6}${N_C}"; sleep 0.009; printf "%b" "${BB_C}${txt7}${N_C}"; sleep 0.009; printf "%b" "${PP_C}${txt8}${N_C}"; sleep 0.009; sleep 0.3; total_len=$((${#txt1}+${#txt2}+${#txt3}+${#txt4}+${#txt5}+${#txt6}+${#txt7}+${#txt8})); for ((i=total_len;i>0;i--)); do printf "\b \b"; sleep 0.010; done
+
      txt1="Initializing "; txt2="virus"; txt3=" encryption system"; txt4=" ...... "; txt5="done"; for ((i=0;i<${#txt1};i++)); do printf "%s" "${txt1:i:1}"; sleep 0.009; done; printf "%b" "${R_C}${txt2}${N_C}"; for ((i=0;i<${#txt3};i++)); do printf "%s" "${txt3:i:1}"; sleep 0.009; done; for ((i=0;i<${#txt4};i++)); do printf "%s" "${txt4:i:1}"; sleep 0.1; done; for ((i=0;i<${#txt5};i++)); do printf "%s" "${txt5:i:1}"; sleep 0.009; done; sleep 0.3; for ((i=${#txt1}+${#txt2}+${#txt3}+${#txt4}+${#txt5};i>0;i--)); do printf "\b \b"; sleep 0.010; done
-    printf "Let's do this my brave ${PP_C}g${N_C}${R_C}a${N_C}${OO_C}n${N_C}${Y_C}g${N_C}${G_C}s${N_C}${BB_C}t${N_C}${PP_C}a${N_C}\nWait a bit\n\n"
 
     # Check ISP4 panel
     if [[ -f "/usr/local/ispmgr/bin/ispmgr" ]]; then
