@@ -96,7 +96,9 @@ done
 backup () {
 	local BACKUP_ROOT_DIR="/root/support"
 	local DIR_LIST=("/etc/" "/usr/local/mgr5/etc/" "/var/spool/cron/" "/var/named/" "/var/lib/powerdns/")
-	local BACKUP_DIR="${BACKUP_ROOT_DIR}/$(date '+%d-%b-%Y-%H-%M-%Z')"
+
+	BACKUP_DIR="${BACKUP_ROOT_DIR}/$(date '+%d-%b-%Y-%H-%M-%Z')"
+
 	local ROOT_DF=$(df "$BACKUP_ROOT_DIR" | sed 1d | awk '{print $5}' | sed 's@%@@gi')
 	local exec_command=""
 
@@ -169,7 +171,7 @@ proceed_with_isp() {
 
     printf "\nRestarting ISP Manager\n\n"
     if [[ $ISP_LIC_BAD = "0" ]];then
-        $ISP5_PANEL_FILE -m ispmgr -R
+        $ISP5_PANEL_FILE -m ispmgr -R&
     fi
 }
 
@@ -249,29 +251,6 @@ proceed_without_isp() {
         if [[ "$ISP5_RTG" = "1" ]]; then
             printf "\n${Y_C}To update ISP Manager license, run:${N_C}\ncurl -X POST -F \"func=soft.edit\" -F \"elid=$ISP5_LITE_ELID\" -F \"out=text\" -F \"ip=${args[1]}\" -F \"sok=ok\" -ks \"https://api.ispmanager.com/billmgr\" -F \"authinfo=support@provider:password\"\n"
 
-            # ISP Manager root access key generation and print
-
-            ispkey="$RANDOM$RANDOM$RANDOM$RANDOM$RANDOM$RANDOM$RANDOM"
-            if timeout 3 $MGRBIN -m ispmgr session.newkey username=root key=$ispkey > /dev/null 2>&1; then
-
-                ihttpd_conf="/usr/local/mgr5/etc/ihttpd.conf"
-                ihttpd_ip=$(grep -v '^#' $ihttpd_conf 2>/dev/null  | grep ip | grep -oE '([0-9]{1,3}\.){3}[0-9]{1,3}')
-                ihttpd_port=$(grep -v '^#' $ihttpd_conf 2>/dev/null | grep port | grep -oE [[:digit:]]+)
-                ispgenurlp1="ISP Manager KEY - https://"
-                ispgenurlp2="/ispmgr?func=auth&username=root&key=$ispkey&checkcookie=no"
-
-                printf "\n${Y_C}Generating ISP Manager root session key${N_C} "
-
-                if [[ -z $ihttpd_port ]]; then
-                    ihttpd_port="1500"
-                fi
-
-                if [[ -z $ihttpd_ip ]]; then
-                    ihttpd_ip="${args[1]}"
-                fi
-
-                printf "\n${ispgenurlp1}${ihttpd_ip}:${ihttpd_port}${ispgenurlp2}\n"
-            fi
         fi
 
         echo
@@ -301,23 +280,20 @@ isp_manager_processing() {
 
                     if which sqlite3 > /dev/null 2>&1; then
 
-                        if \cp -f $ISP5_LITE_MAIN_DB_FILE $ISP5_LITE_MAIN_DB_FILE.$TSTAMP || cp -f $ISP5_LITE_MAIN_DB_FILE /root/support/$TSTAMP/; then
-                            printf "\n${G_C}DB backup file${N_C} - $ISP5_LITE_MAIN_DB_FILE.$TSTAMP (and also in /root/support/$TSTAMP/)\n"
+                        printf "\n${G_C}DB backup${N_C} - ${BACKUP_DIR}/usr/local/mgr5/etc/ispmgr.db \n"
 
-                            printf "\nUpdating db file (changing ${args[0]} with ${args[1]})\n"
+                        printf "\nUpdating db file (changing ${args[0]} with ${args[1]})\n"
 
-                            sqlite3 $ISP5_LITE_MAIN_DB_FILE "update webdomain_ipaddr set value='${args[1]}' where value='${args[0]}';"
-                            sqlite3 $ISP5_LITE_MAIN_DB_FILE "update emaildomain set ip='${args[1]}' where ip='${args[0]}';"
-                            sqlite3 $ISP5_LITE_MAIN_DB_FILE "update domain_auto set name=replace(name, '${args[0]}', '${args[1]}') where name like '%${args[0]}%';"
-                            sqlite3 $ISP5_LITE_MAIN_DB_FILE "update global_index set field_value='${args[1]}' where field_value='${args[0]}';"
-                            sqlite3 $ISP5_LITE_MAIN_DB_FILE "update db_server set host = '${args[1]}' || substr(host, instr(host, ':')) where host like '${args[0]}:%';"
-                            sqlite3 $ISP5_LITE_MAIN_DB_FILE "update db_mysql_servers set hostname = '${args[1]}' where hostname = '${args[0]}';"
-                            sqlite3 $ISP5_LITE_MAIN_DB_FILE "delete from ipaddr where name='${args[0]}';"
+                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update webdomain_ipaddr set value='${args[1]}' where value='${args[0]}';"
+                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update emaildomain set ip='${args[1]}' where ip='${args[0]}';"
+                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update domain_auto set name=replace(name, '${args[0]}', '${args[1]}') where name like '%${args[0]}%';"
+                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update global_index set field_value='${args[1]}' where field_value='${args[0]}';"
+                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update db_server set host = '${args[1]}' || substr(host, instr(host, ':')) where host like '${args[0]}:%';"
+                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update db_mysql_servers set hostname = '${args[1]}' where hostname = '${args[0]}';"
+                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "delete from ipaddr where name='${args[0]}';"
 
-                            printf "\n${G_C}Update completed${N_C}\n"
-                        else
-                            printf "\n${R_C}ERROR:${N_C} SQLite DB ispmgr backup has failed. Update skipped\n"
-                        fi
+                        printf "\n${G_C}Update completed${N_C}\n"
+
                     else
                         printf "\n${R_C}ERROR:${N_C} sqlite3 not found and cannot be installed. Install it manually and restart script.\n\n"
 			return 1
