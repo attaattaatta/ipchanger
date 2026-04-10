@@ -53,7 +53,6 @@ args=("$@")
 MGR_PATH="/usr/local/mgr5"
 MGRBIN="$MGR_PATH/sbin/mgrctl"
 MGRCTL="$MGR_PATH/sbin/mgrctl -m ispmgr"
-MGR_MAINCONF_FILE="$MGR_PATH/etc/ispmgr.conf"
 ISP5_LITE_MAIN_DB_FILE="/usr/local/mgr5/etc/ispmgr.db"
 ISP_LIC_BAD="0"
 
