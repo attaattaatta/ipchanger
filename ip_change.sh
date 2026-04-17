@@ -15,7 +15,7 @@ OOC="\033[38;5;214m"
 BBC="\033[1;34m"
 
 # Script version
-self_current_version="1.0.25"
+self_current_version="1.0.26"
 printf "\n${YC}Hello${NC}, my version is ${YC}$self_current_version\n\n${NC}"
 
 # Check for root privileges
@@ -57,7 +57,7 @@ ISP5_LITE_MAIN_DB_FILE="/usr/local/mgr5/etc/ispmgr.db"
 ISP_LIC_BAD="0"
 
 # other vars
-SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &> /dev/null && pwd)
+SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 SELF_NAME=$(basename "$0")
 TSTAMP=$(date +%d-%m-%Y-%H-%M-%Z)
 
@@ -105,7 +105,7 @@ backup() {
 
 		if \mkdir -p "$BACKUP_ROOT_DIR"; then
 
-			\mkdir -p "$BACKUP_DIR" &> /dev/null
+			\mkdir -p "$BACKUP_DIR" &>/dev/null
 			for backup_item in "${DIR_LIST[@]}"
 			do
 				if [[ -d "$backup_item" ]]; then
@@ -125,7 +125,7 @@ backup() {
 				fi
 			done
 
-			\cp -Rfp --parents --reflink=auto "/opt/php"*"/etc/" "$BACKUP_DIR" &> /dev/null
+			\cp -Rfp --parents --reflink=auto "/opt/php"*"/etc/" "$BACKUP_DIR" &>/dev/null
 		else
 			printf "${YC}BACKUP ERROR:${NC} Cannot create $BACKUP_ROOT_DIR\n\n"
 		        read -p "Proceed anyway ? [y/N]" -n 1 -r
@@ -188,23 +188,23 @@ proceed_without_isp() {
         printf "\n${GC}Starting IP change systemwide${NC}\n"
 
         # Network manager check
-        if which nmcli &> /dev/null && [[ ! -z "$(ls -A '/etc/NetworkManager/system-connections/')" ]]; then
+        if which nmcli &>/dev/null && [[ ! -z "$(ls -A '/etc/NetworkManager/system-connections/')" ]]; then
             printf "\n${GC}NetworkManager detected${NC}\nConfiguration in /etc/NetworkManager/system-connections/\n"
         fi
 
         # Netplan check
-        if which netplan &> /dev/null && [[ ! -z "$(ls -A '/etc/netplan/')" ]]; then
+        if which netplan &>/dev/null && [[ ! -z "$(ls -A '/etc/netplan/')" ]]; then
             printf "\n${GC}Netplan detected${NC}\nConfiguration in /etc/netplan/\n"
         fi
 
-        IP_CHANGE_PATH_LIST=("/etc/*" "/var/named/*" "/var/lib/powerdns/*" "/usr/local/mgr5/etc/ihttpd.conf")
+        IP_CHANGE_PATH_LIST=("/etc/*" "/var/named/*" "/var/lib/powerdns/*" "/usr/local/lsws/*" "/usr/local/mgr5/etc/ihttpd.conf")
 
         for ip_change_list_item in "${IP_CHANGE_PATH_LIST[@]}"; do
             echo "Processing ${ip_change_list_item}"
             {
             grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} ${ip_change_list_item} | xargs sed -i "s@${args[0]}@${args[1]}@gi" 
             find ${ip_change_list_item} -depth -iname "*${args[0]}*" -exec bash -c 'mv "$0" "${0//'"${args[0]}"'/'"${args[1]}"'}"' {} \;
-            } &> /dev/null
+            } &>/dev/null
         done
 
 	echo
@@ -213,7 +213,7 @@ proceed_without_isp() {
 		systemctl stop docker
 		sed -i "s@${args[0]}@${args[1]}@gi" /var/lib/docker/containers/*/hostconfig.json
 		systemctl start docker
-	} &> /dev/null
+	} &>/dev/null
 
         echo
         read -p "Going through /home/* and /opt/* /usr/local/fastpanel2/* ? (for ex. VESTA panel, Bitrix, etc. It could take a very loooooooong time) [y/N]" -n 1 -r
@@ -226,7 +226,7 @@ proceed_without_isp() {
             grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /opt/* | xargs sed -i "s@${args[0]}@${args[1]}@gi"
             grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /usr/local/fastpanel2/* | xargs sed -i "s@${args[0]}@${args[1]}@gi"
             find /home/* /opt/* /usr/local/fastpanel2/* -depth -iname "*${args[0]}*" -exec bash -c 'mv "$0" "${0//'"${args[0]}"'/'"${args[1]}"'}"' {} \; 
-            } &> /dev/null
+            } &>/dev/null
         fi
 
         # If gateway change is needed
@@ -237,7 +237,7 @@ proceed_without_isp() {
 
             for gateway_config_item in "${GATEWAYCONFIG_PATH_LIST[@]}"; do
                 echo "Processing ${gateway_config_item}"
-                grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[2]} ${gateway_config_item} | xargs sed -i "s@${args[2]}@${args[3]}@gi" &> /dev/null
+                grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[2]} ${gateway_config_item} | xargs sed -i "s@${args[2]}@${args[3]}@gi" &>/dev/null
             done
 
             GATEWAYCHANGED=YES
