@@ -15,7 +15,7 @@ OOC="\033[38;5;214m"
 BBC="\033[1;34m"
 
 # Script version
-self_current_version="1.0.26"
+self_current_version="1.0.27"
 printf "\n${YC}Hello${NC}, my version is ${YC}$self_current_version\n\n${NC}"
 
 # Check for root privileges
@@ -33,7 +33,7 @@ if ! flock -n 9; then
     if command -v lsof >/dev/null 2>&1; then
         PID=$(lsof -t "$LOCKFILE" 2>/dev/null | grep -v "^$$\$" | head -n1)
     elif command -v fuser >/dev/null 2>&1; then
-        PID=$(fuser "$LOCKFILE" 2>/dev/null 2>/dev/null | tr ' ' '\n' | grep -v "^$$\$" | head -n1)
+        PID=$(fuser "$LOCKFILE" 2>/dev/null | tr ' ' '\n' | grep -v "^$$\$" | head -n1)
     fi
     
     if [ -n "$PID" ]; then
@@ -109,7 +109,7 @@ backup() {
 			for backup_item in "${DIR_LIST[@]}"
 			do
 				if [[ -d "$backup_item" ]]; then
-					backup_item_size=$(\du -sm "${backup_item}" &>/dev/null | awk '{print $1}')
+					backup_item_size=$(\du -sm "${backup_item}" 2>/dev/null | awk '{print $1}')
 
 					if [[ "${backup_item_size}" -lt 2000 ]]; then
 						printf "Processing ${GC}backup${NC} ${BACKUP_DIR}${backup_item}"
