@@ -14,9 +14,11 @@ PPC="\033[1;35m"
 OOC="\033[38;5;214m"
 BBC="\033[1;34m"
 
+printf "   ___ ____   ____ _                                         \n  |_ _|  _ \\ / ___| |__   __ _ _ __   __ _  ___ _ __          \n   | || |_) | |   | '_ \\ / _\` | '_ \\ / _\` |/ _ \\ '__|         \n   | ||  __/| |___| | | | (_| | | | | (_| |  __/ |            \n  |___|_|    \\____|_| |_|\\__,_|_| |_|\\__, |\\___|_|            \n                                     |___/                   \n" | while IFS= read -r line; do printf "%s\n" "$line"; sleep 0.1; done
+
 # Script version
-self_current_version="1.0.27"
-printf "\n${YC}Hello${NC}, my version is ${YC}$self_current_version\n\n${NC}"
+self_current_version="1.0.28"
+printf "   ${YC}v.${YC}$self_current_version\n\n${NC}"
 
 # Check for root privileges
 if [[ $EUID -ne 0 ]]; then
@@ -334,10 +336,6 @@ printf " systemwide.\n"
 read -p "Proceed? [Y/n]" -n 1 -r
 echo
 if [[ ! $REPLY =~ ^([Nn]|$'\xd1\x82'|$'\xd0\xa2')$ ]]; then
-
-     txt1="Let's do this my brave "; txt2="g"; txt3="a"; txt4="n"; txt5="g"; txt6="s"; txt7="t"; txt8="a"; for ((i=0;i<${#txt1};i++)); do printf "%s" "${txt1:i:1}"; sleep 0.009; done; printf "%b" "${PPC}${txt2}${NC}"; sleep 0.009; printf "%b" "${RC}${txt3}${NC}"; sleep 0.009; printf "%b" "${OOC}${txt4}${NC}"; sleep 0.009; printf "%b" "${YC}${txt5}${NC}"; sleep 0.009; printf "%b" "${GC}${txt6}${NC}"; sleep 0.009; printf "%b" "${BBC}${txt7}${NC}"; sleep 0.009; printf "%b" "${PPC}${txt8}${NC}"; sleep 0.009; sleep 0.3; total_len=$((${#txt1}+${#txt2}+${#txt3}+${#txt4}+${#txt5}+${#txt6}+${#txt7}+${#txt8})); for ((i=total_len;i>0;i--)); do printf "\b \b"; sleep 0.010; done
-
-     txt1="Initializing "; txt2="virus"; txt3=" encryption system"; txt4=" ...... "; txt5="done"; for ((i=0;i<${#txt1};i++)); do printf "%s" "${txt1:i:1}"; sleep 0.009; done; printf "%b" "${RC}${txt2}${NC}"; for ((i=0;i<${#txt3};i++)); do printf "%s" "${txt3:i:1}"; sleep 0.009; done; for ((i=0;i<${#txt4};i++)); do printf "%s" "${txt4:i:1}"; sleep 0.1; done; for ((i=0;i<${#txt5};i++)); do printf "%s" "${txt5:i:1}"; sleep 0.009; done; sleep 0.3; for ((i=${#txt1}+${#txt2}+${#txt3}+${#txt4}+${#txt5};i>0;i--)); do printf "\b \b"; sleep 0.010; done
 
     # Doing backup
     backup
