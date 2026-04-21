@@ -18,7 +18,7 @@ printf "   ___ ____   ____ _                                         \n  |_ _|  
 
 # Script version
 self_current_version="1.0.28"
-printf "   ${YC}v.${YC}$self_current_version\n\n${NC}"
+printf "   ${YC}v${YC}$self_current_version\n\n${NC}"
 
 # Check for root privileges
 if [[ $EUID -ne 0 ]]; then
