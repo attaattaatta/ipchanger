@@ -10,14 +10,11 @@ RC="\033[0;91m"
 GC="\033[0;92m"
 NC="\033[0m"
 YC="\033[1;33m"
-PPC="\033[1;35m"
-OOC="\033[38;5;214m"
-BBC="\033[1;34m"
 
 printf "   ___ ____   ____ _                                         \n  |_ _|  _ \\ / ___| |__   __ _ _ __   __ _  ___ _ __          \n   | || |_) | |   | '_ \\ / _\` | '_ \\ / _\` |/ _ \\ '__|         \n   | ||  __/| |___| | | | (_| | | | | (_| |  __/ |            \n  |___|_|    \\____|_| |_|\\__,_|_| |_|\\__, |\\___|_|            \n                                     |___/                   \n" | while IFS= read -r line; do printf "%s\n" "$line"; sleep 0.1; done
 
 # Script version
-self_current_version="1.0.28"
+self_current_version="1.0.29"
 printf "   ${YC}v${YC}$self_current_version\n\n${NC}"
 
 # Check for root privileges
@@ -100,7 +97,8 @@ backup() {
 
 	BACKUP_DIR="${BACKUP_ROOT_DIR}/$(date '+%d-%b-%Y-%H-%M-%Z')"
 
-	local ROOT_DF=$(df "$BACKUP_ROOT_DIR" | sed 1d | awk '{print $5}' | sed 's@%@@gi')
+	local ROOT_DF
+	ROOT_DF=$(df "$BACKUP_ROOT_DIR" | sed 1d | awk '{print $5}' | sed 's@%@@gi')
 	local exec_command=""
 
 	if [[ "$ROOT_DF" -le 95 ]]; then
@@ -380,15 +378,16 @@ if [[ ! $REPLY =~ ^([Nn]|$'\xd1\x82'|$'\xd0\xa2')$ ]]; then
                 printf "\n${RC}ERROR:${NC} Unknown panel license version detected - $ISP5_LITE_LIC\n"
                 ISP5_RTG=0
 		if [[ -f $ISP5_LITE_MAIN_DB_FILE ]]; then
-		        printf "\n${YC}WARNING:${NC} something not good with panel license detection, maybe rescue loaded\n"
+			printf "\n${YC}WARNING:${NC} something not good with panel license detection, maybe rescue loaded\n"
 			echo
-		        read -p "Replace in $ISP5_LITE_MAIN_DB_FILE anyway ? [y/N]" -n 1 -r
-		        echo
-		        if ! [[ $REPLY =~ ^([Yy]|$'\xd0\xbd'|$'\xd0\x9d')$ ]]; then
-		            ISP_LIC_BAD=1
-		            proceed_without_isp
+			read -p "Replace in $ISP5_LITE_MAIN_DB_FILE anyway ? [y/N]" -n 1 -r
+			echo
+			if ! [[ $REPLY =~ ^([Yy]|$'\xd0\xbd'|$'\xd0\x9d')$ ]]; then
+				ISP_LIC_BAD=1
+				proceed_without_isp
+			else
+				isp_manager_processing
 		        fi
-			isp_manager_processing
 		fi
                 sleep 2s
                 proceed_without_isp
