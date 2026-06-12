@@ -14,7 +14,7 @@ YC="\033[1;33m"
 printf "   ___ ____   ____ _                                         \n  |_ _|  _ \\ / ___| |__   __ _ _ __   __ _  ___ _ __          \n   | || |_) | |   | '_ \\ / _\` | '_ \\ / _\` |/ _ \\ '__|         \n   | ||  __/| |___| | | | (_| | | | | (_| |  __/ |            \n  |___|_|    \\____|_| |_|\\__,_|_| |_|\\__, |\\___|_|            \n                                     |___/                   \n" | while IFS= read -r line; do printf "%s\n" "$line"; sleep 0.1; done
 
 # Script version
-self_current_version="1.0.29"
+self_current_version="1.1.0"
 printf "   ${YC}v${YC}$self_current_version\n\n${NC}"
 
 # Check for root privileges
@@ -35,7 +35,7 @@ if ! flock -n 9; then
         PID=$(fuser "$LOCKFILE" 2>/dev/null | tr ' ' '\n' | grep -v "^$$\$" | head -n1)
     fi
     
-    if [ -n "$PID" ]; then
+    if [[ -n "$PID" ]]; then
         printf "\n%s is ${LRV}already locked${NCV} by PID %s\n\n" "$LOCKFILE" "$PID"
     else
         printf "\n%s ${LRV}already exists${NCV}\nInstall 'lsof' or 'fuser' to see the PID.\n\n" "$LOCKFILE"
@@ -53,13 +53,13 @@ MGR_PATH="/usr/local/mgr5"
 MGRBIN="$MGR_PATH/sbin/mgrctl"
 MGRCTL="$MGR_PATH/sbin/mgrctl -m ispmgr"
 ISP5_LITE_MAIN_DB_FILE="/usr/local/mgr5/etc/ispmgr.db"
-ISP_LIC_BAD="0"
+ISP_LIC_BAD=0
+PUSH_DNS_NEED=0
 
 # other vars
 SCRIPT_DIR=$(cd -- "$(dirname -- "${BASH_SOURCE[0]}")" &>/dev/null && pwd)
 SELF_NAME=$(basename "$0")
 TSTAMP=$(date +%d-%m-%Y-%H-%M-%Z)
-
 USAGE_INFO=$(echo; printf "Use 2 or 4 arguments."; echo; printf "Usage: $SCRIPT_DIR/$SELF_NAME old_ip new_ip <old_gateway> <new_gateway>")
 
 # Check arguments
@@ -151,27 +151,45 @@ backup() {
 isp_pdns_ipchanger() {
     if [[ -f "/usr/sbin/pdns_server" ]]; then
         printf "\n${GC}Updating MySQL PowerDNS DB pdns ${NC}"
-        mysql -D pdns -e "update records set content=replace(content,'${args[0]}', '${args[1]}');" >/dev/null 2>/dev/null
-        mysql -D powerdns -e "update records set content=replace(content,'${args[0]}', '${args[1]}');" >/dev/null 2>/dev/null
+        mysql -D pdns -e "update records set content=replace(content,'${args[0]}', '${args[1]}');" &>/dev/null
+        mysql -D powerdns -e "update records set content=replace(content,'${args[0]}', '${args[1]}');" &>/dev/null
         printf " - ${GC}OK${NC}\n"
     fi
 }
 
 # ISP Manager changes
 proceed_with_isp() {
-    printf "\nSetting ihttpd listen all ips\n"
-    if [[ $ISP_LIC_BAD = "0" ]];then
-        $ISP5_PANEL_FILE -m core ihttpd.edit ip=any elid=${args[0]} sok=ok >/dev/null 2>/dev/null
-    fi
+	if [[ $ISP_LIC_BAD -eq 0 ]];then
+		printf "\nSetting ihttpd listen all ips\n"
+		$ISP5_PANEL_FILE -m core ihttpd.edit ip=any elid=${args[0]} sok=ok &>/dev/null
 
-    printf "\nCleaning ISP Manager cache\n"
-    rm -rf /usr/local/mgr5/var/.xmlcache/*
-    rm -f /usr/local/mgr5/etc/ispmgr.lic /usr/local/mgr5/etc/ispmgr.lic.lock /usr/local/mgr5/var/.db.cache.*
+		printf "\nCleaning ISP Manager cache\n"
+		rm -rf /usr/local/mgr5/var/.xmlcache/*
+		rm -f /usr/local/mgr5/etc/ispmgr.lic /usr/local/mgr5/etc/ispmgr.lic.lock /usr/local/mgr5/var/.db.cache.*
 
-    printf "\nRestarting ISP Manager\n\n"
-    if [[ $ISP_LIC_BAD = "0" ]];then
-        $ISP5_PANEL_FILE -m ispmgr -R&
-    fi
+		printf "\nRestarting ISP Manager\n"
+		if $ISP5_PANEL_FILE -m ispmgr -R >/dev/null 2>&1; then
+			sleep 5
+
+			if $MGRBIN -m ispmgr slaveserver >/dev/null 2>&1; then
+				PUSH_DNS_NEED=1
+			else
+				PUSH_DNS_NEED=0
+			fi
+	
+			if [[  $PUSH_DNS_NEED -eq 1 ]]; then 
+				mapfile -t ISP_DNS_DOMAINS < <($MGRBIN -m ispmgr domain | sed -n 's/^name=\([^ ]*\).*/\1/p') &>/dev/null
+				$MGRBIN -m ispmgr slaveserver.fix sok=ok elid="$(printf '%s, ' "${ISP_DNS_DOMAINS[@]}" | sed 's/, $//')" elname=${ISP_DNS_DOMAINS[0]} &>/dev/null &
+				printf "\nPushed ISP Manager DNS to slave \n"
+			else
+				printf "\nISP Manager DNS slave push was ${YC}skipped${NC} (no slave server defined in panel)\n"
+			fi
+		else
+			printf "\nISP Manager restart ${RC}failed${NC} (check /usr/local/mgr5/var/ispmgr.log) \n"
+			return 1
+		fi
+		printf "\n"
+	fi
 }
 
 # Proceed without ISP Manager
@@ -300,7 +318,7 @@ isp_manager_processing() {
                 fi
 
                 # ISP Manager in MySQL
-                if mysql -D ispmgr -e "select * from webdomain_ipaddr;" >/dev/null 2>/dev/null; then
+                if mysql -D ispmgr -e "select * from webdomain_ipaddr;" &>/dev/null; then
                     if mysqldump --insert-ignore --complete-insert --events --routines --triggers --single-transaction --max_allowed_packet=1G --quick --lock-tables=false ispmgr > /root/support/$TSTAMP/ispmgr.sql; then
 
                         printf "\n${GC}DB backup file - /root/support/$TSTAMP/ispmgr.sql${NC}\n"
@@ -359,7 +377,7 @@ if [[ ! $REPLY =~ ^([Nn]|$'\xd1\x82'|$'\xd0\xa2')$ ]]; then
         shopt -s nocasematch
 
         # processing ISP Manager disabled sites
-        grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} ${MGR_PATH}/var/usrtmp/ispmgr/* | xargs sed -i "s@${args[0]}@${args[1]}@gi" >/dev/null 2>/dev/null
+        grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} ${MGR_PATH}/var/usrtmp/ispmgr/* | xargs sed -i "s@${args[0]}@${args[1]}@gi" &>/dev/null
 
         case "$ISP5_LITE_LIC" in
             *busines*)
