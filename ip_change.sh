@@ -14,7 +14,7 @@ YC="\033[1;33m"
 printf "   ___ ____   ____ _                                         \n  |_ _|  _ \\ / ___| |__   __ _ _ __   __ _  ___ _ __          \n   | || |_) | |   | '_ \\ / _\` | '_ \\ / _\` |/ _ \\ '__|         \n   | ||  __/| |___| | | | (_| | | | | (_| |  __/ |            \n  |___|_|    \\____|_| |_|\\__,_|_| |_|\\__, |\\___|_|            \n                                     |___/                   \n" | while IFS= read -r line; do printf "%s\n" "$line"; sleep 0.1; done
 
 # Script version
-self_current_version="1.1.1"
+self_current_version="1.2.1"
 printf "   ${YC}v${YC}$self_current_version\n\n${NC}"
 
 # Check for root privileges
@@ -195,36 +195,37 @@ proceed_with_isp() {
 
 # Proceed without ISP Manager
 proceed_without_isp() {
-    read -p "Continue IP change (files) [Y/n]" -n 1 -r
-    echo
-    if ! [[ $REPLY =~ ^([Nn]|$'\xd1\x82'|$'\xd0\xa2')$ ]]; then
+	read -p "Continue IP change (files) [Y/n]" -n 1 -r
+	echo
+	if ! [[ $REPLY =~ ^([Nn]|$'\xd1\x82'|$'\xd0\xa2')$ ]]; then
+	
+		printf "\n${GC}Current network settings:${NC}\n\n"
+		ip a
+		echo
+		ip r
 
-        printf "\n${GC}Current network settings:${NC}\n\n"
-        ip a
-        echo
-        ip r
+		printf "\n${GC}Starting IP change systemwide${NC}\n"
 
-        printf "\n${GC}Starting IP change systemwide${NC}\n"
+		# Network manager check
+		if which nmcli &>/dev/null && [[ ! -z "$(ls -A '/etc/NetworkManager/system-connections/')" ]]; then
+			printf "\n${GC}NetworkManager detected${NC}\nConfiguration in /etc/NetworkManager/system-connections/\n"
+		fi
 
-        # Network manager check
-        if which nmcli &>/dev/null && [[ ! -z "$(ls -A '/etc/NetworkManager/system-connections/')" ]]; then
-            printf "\n${GC}NetworkManager detected${NC}\nConfiguration in /etc/NetworkManager/system-connections/\n"
-        fi
+		# Netplan check
+		if which netplan &>/dev/null && [[ ! -z "$(ls -A '/etc/netplan/')" ]]; then
+			printf "\n${GC}Netplan detected${NC}\nConfiguration in /etc/netplan/\n"
+		fi
 
-        # Netplan check
-        if which netplan &>/dev/null && [[ ! -z "$(ls -A '/etc/netplan/')" ]]; then
-            printf "\n${GC}Netplan detected${NC}\nConfiguration in /etc/netplan/\n"
-        fi
+		IP_CHANGE_PATH_LIST=("/etc/" "/var/named/" "/var/lib/powerdns/" "/usr/local/lsws/" "/usr/local/mgr5/etc/ihttpd.conf")
 
-        IP_CHANGE_PATH_LIST=("/etc/" "/var/named/" "/var/lib/powerdns/" "/usr/local/lsws/" "/usr/local/mgr5/etc/ihttpd.conf")
-
-        for ip_change_list_item in "${IP_CHANGE_PATH_LIST[@]}"; do
-            echo "Processing ${ip_change_list_item}"
-            {
-            grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} ${ip_change_list_item} | xargs sed -i "s@${args[0]}@${args[1]}@gi" 
-            find ${ip_change_list_item} -depth -iname "*${args[0]}*" -exec bash -c 'mv "$0" "${0//'"${args[0]}"'/'"${args[1]}"'}"' {} \;
-            } &>/dev/null
-        done
+		for ip_change_list_item in "${IP_CHANGE_PATH_LIST[@]}"; do
+			echo "Processing ${ip_change_list_item}"
+			{
+			grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} ${ip_change_list_item} | xargs sed -i "s@${args[0]}@${args[1]}@gi" 
+			find ${ip_change_list_item} -depth -iname "*${args[0]}*" -exec bash -c 'mv "$0" "${0//'"${args[0]}"'/'"${args[1]}"'}"' {} \;
+			find ${ip_change_list_item} -xtype l -exec bash -c 'target=$(readlink -- "$1"); old=$2; new=$3; new_target=${target//$old/$new}; [[ "$target" != "$new_target" ]] && ln -sfT -- "$new_target" "$1"' _ {} "${args[0]}" "${args[1]}" \;
+			} &>/dev/null
+		done
 
 	echo
 	echo "Processing Docker"
@@ -234,58 +235,62 @@ proceed_without_isp() {
 		systemctl start docker
 	} &>/dev/null
 
-        echo
-        read -p "Going through /home/ and /opt/ /usr/local/fastpanel2/ ? (for ex. VESTA panel, Bitrix, etc. It could take a very loooooooong time) [y/N]" -n 1 -r
+		echo
+		read -p "Going through /home/ and /opt/ /usr/local/fastpanel2/ ? (for ex. VESTA panel, Bitrix, etc. It could take a very loooooooong time) [y/N]" -n 1 -r
 
-        if [[ $REPLY =~ ^([Yy]|$'\xd0\xbd'|$'\xd0\x9d')$ ]]; then
-            echo
-            echo "Processing /home/ /opt/ /usr/local/fastpanel2/"
-            {
-            grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /home/ | xargs sed -i "s@${args[0]}@${args[1]}@gi"
-            grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /opt/ | xargs sed -i "s@${args[0]}@${args[1]}@gi"
-            grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /usr/local/fastpanel2/ | xargs sed -i "s@${args[0]}@${args[1]}@gi"
-            find /home/ /opt/ /usr/local/fastpanel2/ -depth -iname "*${args[0]}*" -exec bash -c 'mv "$0" "${0//'"${args[0]}"'/'"${args[1]}"'}"' {} \; 
-            } &>/dev/null
-        fi
+		if [[ $REPLY =~ ^([Yy]|$'\xd0\xbd'|$'\xd0\x9d')$ ]]; then
+			echo
+			CHANGE_PATH_LIST=("/home/" "/opt/" "/usr/local/fastpanel2/")
+			for change_list_item in "${CHANGE_PATH_LIST[@]}"; do
+					echo "Processing ${change_list_item}"
+					{
+					grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /home/ | xargs sed -i "s@${args[0]}@${args[1]}@gi"
+					grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /opt/ | xargs sed -i "s@${args[0]}@${args[1]}@gi"
+					grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /usr/local/fastpanel2/ | xargs sed -i "s@${args[0]}@${args[1]}@gi"
+					find ${change_list_item} -depth -iname "*${args[0]}*" -exec bash -c 'mv "$0" "${0//'"${args[0]}"'/'"${args[1]}"'}"' {} \;
+					find ${change_list_item} -xtype l -exec bash -c 'target=$(readlink -- "$1"); old=$2; new=$3; new_target=${target//$old/$new}; [[ "$target" != "$new_target" ]] && ln -sfT -- "$new_target" "$1"' _ {} "${args[0]}" "${args[1]}" \;
+					} &>/dev/null
+			done
+		fi
 
-        # If gateway change is needed
-        if [[ $GATEWAYCHANGE == "YES" ]]; then
-            printf "\n${GC}Changing gateway address${NC}\n"
+		# If gateway change is needed
+		if [[ $GATEWAYCHANGE == "YES" ]]; then
+			printf "\n${GC}Changing gateway address${NC}\n"
 
-            GATEWAYCONFIG_PATH_LIST=("/etc/NetworkManager/system-connections/" "/etc/netplan/" "/etc/network/interfaces" "/etc/network/interfaces.d/" "/etc/sysconfig/network*")
+			GATEWAYCONFIG_PATH_LIST=("/etc/NetworkManager/system-connections/" "/etc/netplan/" "/etc/network/interfaces" "/etc/network/interfaces.d/" "/etc/sysconfig/network*")
 
-            for gateway_config_item in "${GATEWAYCONFIG_PATH_LIST[@]}"; do
-                echo "Processing ${gateway_config_item}"
-                grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[2]} ${gateway_config_item} | xargs sed -i "s@${args[2]}@${args[3]}@gi" &>/dev/null
-            done
+			for gateway_config_item in "${GATEWAYCONFIG_PATH_LIST[@]}"; do
+				echo "Processing ${gateway_config_item}"
+				grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[2]} ${gateway_config_item} | xargs sed -i "s@${args[2]}@${args[3]}@gi" &>/dev/null
+			done
 
-            GATEWAYCHANGED=YES
-            unset GATEWAYCHANGE
-        else
-            printf "\n${YC}3 and 4 script's arguments were empty ${NC}\n"
-            printf "If default gateway IP address / subnet mask need to be changed, do it manually\n"
-        fi
+			GATEWAYCHANGED=YES
+			unset GATEWAYCHANGE
+		else
+			printf "\n${YC}3 and 4 script's arguments were empty ${NC}\n"
+			printf "If default gateway IP address / subnet mask need to be changed, do it manually\n"
+		fi
 
-        if [[ "$ISP5_RTG" = "1" ]]; then
-            printf "\n${YC}To update ISP Manager license, run:${NC}\ncurl -X POST -F \"func=soft.edit\" -F \"elid=$ISP5_LITE_ELID\" -F \"out=text\" -F \"ip=${args[1]}\" -F \"sok=ok\" -ks \"https://api.ispmanager.com/billmgr\" -F \"authinfo=support@provider:password\"\n"
+		if [[ "$ISP5_RTG" = "1" ]]; then
+			printf "\n${YC}To update ISP Manager license, run:${NC}\ncurl -X POST -F \"func=soft.edit\" -F \"elid=$ISP5_LITE_ELID\" -F \"out=text\" -F \"ip=${args[1]}\" -F \"sok=ok\" -ks \"https://api.ispmanager.com/billmgr\" -F \"authinfo=support@provider:password\"\n"
 
-        fi
+		fi
 
-        echo
+		echo
 
-        printf "${GC}${args[0]} -> ${args[1]} was changed${NC}\n"
-        if [[ $GATEWAYCHANGED == "YES" ]]; then
-            printf "${GC}Gateway IP ${args[2]} -> ${args[3]} was changed${NC}\n"
-            printf "\n${YC}You should check subnet mask correctness ${NC}\n"
-        fi
+		printf "${GC}${args[0]} -> ${args[1]} was changed${NC}\n"
+		if [[ $GATEWAYCHANGED == "YES" ]]; then
+			printf "${GC}Gateway IP ${args[2]} -> ${args[3]} was changed${NC}\n"
+			printf "\n${YC}You should check subnet mask correctness ${NC}\n"
+		fi
 
-        printf "Adjust the network ${YC}mask${NC} if necessary and reboot this system (${YC}run init 6${NC}) manually to apply all changes\n"
+		printf "Adjust the network ${YC}mask${NC} if necessary and reboot this system (${YC}run init 6${NC}) manually to apply all changes\n"
 
-        unset GATEWAYCHANGED
-    else
-        printf "\n${GC}Nothing was done. Come back, bro!${NC}\n"
-        exit 1
-    fi
+		unset GATEWAYCHANGED
+	else
+		printf "\n${GC}Nothing was done. Come back, bro!${NC}\n"
+		exit 1
+	fi
 }
 
 # ISP panel proccessing
