@@ -14,7 +14,7 @@ YC="\033[1;33m"
 printf "   ___ ____   ____ _                                         \n  |_ _|  _ \\ / ___| |__   __ _ _ __   __ _  ___ _ __          \n   | || |_) | |   | '_ \\ / _\` | '_ \\ / _\` |/ _ \\ '__|         \n   | ||  __/| |___| | | | (_| | | | | (_| |  __/ |            \n  |___|_|    \\____|_| |_|\\__,_|_| |_|\\__, |\\___|_|            \n                                     |___/                   \n" | while IFS= read -r line; do printf "%s\n" "$line"; sleep 0.1; done
 
 # Script version
-self_current_version="1.1.0"
+self_current_version="1.1.1"
 printf "   ${YC}v${YC}$self_current_version\n\n${NC}"
 
 # Check for root privileges
@@ -165,6 +165,7 @@ proceed_with_isp() {
 
 		printf "\nCleaning ISP Manager cache\n"
 		rm -rf /usr/local/mgr5/var/.xmlcache/*
+		rm -rf /usr/local/mgr5/var/.xmlcache/.*
 		rm -f /usr/local/mgr5/etc/ispmgr.lic /usr/local/mgr5/etc/ispmgr.lic.lock /usr/local/mgr5/var/.db.cache.*
 
 		printf "\nRestarting ISP Manager\n"
@@ -215,7 +216,7 @@ proceed_without_isp() {
             printf "\n${GC}Netplan detected${NC}\nConfiguration in /etc/netplan/\n"
         fi
 
-        IP_CHANGE_PATH_LIST=("/etc/*" "/var/named/*" "/var/lib/powerdns/*" "/usr/local/lsws/*" "/usr/local/mgr5/etc/ihttpd.conf")
+        IP_CHANGE_PATH_LIST=("/etc/" "/var/named/" "/var/lib/powerdns/" "/usr/local/lsws/" "/usr/local/mgr5/etc/ihttpd.conf")
 
         for ip_change_list_item in "${IP_CHANGE_PATH_LIST[@]}"; do
             echo "Processing ${ip_change_list_item}"
@@ -234,16 +235,16 @@ proceed_without_isp() {
 	} &>/dev/null
 
         echo
-        read -p "Going through /home/* and /opt/* /usr/local/fastpanel2/* ? (for ex. VESTA panel, Bitrix, etc. It could take a very loooooooong time) [y/N]" -n 1 -r
+        read -p "Going through /home/ and /opt/ /usr/local/fastpanel2/ ? (for ex. VESTA panel, Bitrix, etc. It could take a very loooooooong time) [y/N]" -n 1 -r
 
         if [[ $REPLY =~ ^([Yy]|$'\xd0\xbd'|$'\xd0\x9d')$ ]]; then
             echo
-            echo "Processing /home/* /opt/* /usr/local/fastpanel2/*"
+            echo "Processing /home/ /opt/ /usr/local/fastpanel2/"
             {
-            grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /home/* | xargs sed -i "s@${args[0]}@${args[1]}@gi"
-            grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /opt/* | xargs sed -i "s@${args[0]}@${args[1]}@gi"
-            grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /usr/local/fastpanel2/* | xargs sed -i "s@${args[0]}@${args[1]}@gi"
-            find /home/* /opt/* /usr/local/fastpanel2/* -depth -iname "*${args[0]}*" -exec bash -c 'mv "$0" "${0//'"${args[0]}"'/'"${args[1]}"'}"' {} \; 
+            grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /home/ | xargs sed -i "s@${args[0]}@${args[1]}@gi"
+            grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /opt/ | xargs sed -i "s@${args[0]}@${args[1]}@gi"
+            grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} /usr/local/fastpanel2/ | xargs sed -i "s@${args[0]}@${args[1]}@gi"
+            find /home/ /opt/ /usr/local/fastpanel2/ -depth -iname "*${args[0]}*" -exec bash -c 'mv "$0" "${0//'"${args[0]}"'/'"${args[1]}"'}"' {} \; 
             } &>/dev/null
         fi
 
@@ -251,7 +252,7 @@ proceed_without_isp() {
         if [[ $GATEWAYCHANGE == "YES" ]]; then
             printf "\n${GC}Changing gateway address${NC}\n"
 
-            GATEWAYCONFIG_PATH_LIST=("/etc/NetworkManager/system-connections/*" "/etc/netplan/*" "/etc/network/interfaces" "/etc/network/interfaces.d/*" "/etc/sysconfig/network*")
+            GATEWAYCONFIG_PATH_LIST=("/etc/NetworkManager/system-connections/" "/etc/netplan/" "/etc/network/interfaces" "/etc/network/interfaces.d/" "/etc/sysconfig/network*")
 
             for gateway_config_item in "${GATEWAYCONFIG_PATH_LIST[@]}"; do
                 echo "Processing ${gateway_config_item}"
@@ -377,7 +378,7 @@ if [[ ! $REPLY =~ ^([Nn]|$'\xd1\x82'|$'\xd0\xa2')$ ]]; then
         shopt -s nocasematch
 
         # processing ISP Manager disabled sites
-        grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} ${MGR_PATH}/var/usrtmp/ispmgr/* | xargs sed -i "s@${args[0]}@${args[1]}@gi" &>/dev/null
+        grep --no-messages --devices=skip -rIil --exclude={*.log,*.log.*,*.run,*random*,*.jpg,*.jpeg,*.webp} ${args[0]} ${MGR_PATH}/var/usrtmp/ispmgr/ | xargs sed -i "s@${args[0]}@${args[1]}@gi" &>/dev/null
 
         case "$ISP5_LITE_LIC" in
             *busines*)
