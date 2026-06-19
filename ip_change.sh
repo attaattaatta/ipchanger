@@ -14,7 +14,7 @@ YC="\033[1;33m"
 printf "   ___ ____   ____ _                                         \n  |_ _|  _ \\ / ___| |__   __ _ _ __   __ _  ___ _ __          \n   | || |_) | |   | '_ \\ / _\` | '_ \\ / _\` |/ _ \\ '__|         \n   | ||  __/| |___| | | | (_| | | | | (_| |  __/ |            \n  |___|_|    \\____|_| |_|\\__,_|_| |_|\\__, |\\___|_|            \n                                     |___/                   \n" | while IFS= read -r line; do printf "%s\n" "$line"; sleep 0.1; done
 
 # Script version
-self_current_version="1.2.1"
+self_current_version="1.2.2"
 printf "   ${YC}v${YC}$self_current_version\n\n${NC}"
 
 # Check for root privileges
@@ -164,9 +164,9 @@ proceed_with_isp() {
 		$ISP5_PANEL_FILE -m core ihttpd.edit ip=any elid=${args[0]} sok=ok &>/dev/null
 
 		printf "\nCleaning ISP Manager cache\n"
-		rm -rf /usr/local/mgr5/var/.xmlcache/*
-		rm -rf /usr/local/mgr5/var/.xmlcache/.*
-		rm -f /usr/local/mgr5/etc/ispmgr.lic /usr/local/mgr5/etc/ispmgr.lic.lock /usr/local/mgr5/var/.db.cache.*
+		rm -rf /usr/local/mgr5/var/.xmlcache/* &>/dev/null
+		rm -rf /usr/local/mgr5/var/.xmlcache/.* &>/dev/null
+		rm -f /usr/local/mgr5/etc/ispmgr.lic /usr/local/mgr5/etc/ispmgr.lic.lock /usr/local/mgr5/var/.db.cache.* &>/dev/null
 
 		printf "\nRestarting ISP Manager\n"
 		if $ISP5_PANEL_FILE -m ispmgr -R >/dev/null 2>&1; then
