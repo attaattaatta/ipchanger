@@ -20,3 +20,4 @@ bash <(timeout 10 curl -kLs https://bit.ly/3uSpUrM --connect-timeout 4) old_ip n
 - Обновление PowerDNS и ISPmanager (SQLite/MySQL)
 - Очистка кеша и перезапуск ISPmanager
 - Поддержка смены шлюза (опционально, маску меняем руками)
+- Обработка симлинков

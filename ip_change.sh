@@ -14,7 +14,7 @@ YC="\033[1;33m"
 printf "   ___ ____   ____ _                                         \n  |_ _|  _ \\ / ___| |__   __ _ _ __   __ _  ___ _ __          \n   | || |_) | |   | '_ \\ / _\` | '_ \\ / _\` |/ _ \\ '__|         \n   | ||  __/| |___| | | | (_| | | | | (_| |  __/ |            \n  |___|_|    \\____|_| |_|\\__,_|_| |_|\\__, |\\___|_|            \n                                     |___/                   \n" | while IFS= read -r line; do printf "%s\n" "$line"; sleep 0.1; done
 
 # Script version
-self_current_version="1.2.2"
+self_current_version="1.2.3"
 printf "   ${YC}v${YC}$self_current_version\n\n${NC}"
 
 # Check for root privileges
@@ -29,9 +29,9 @@ exec 9>"$LOCKFILE"
 
 if ! flock -n 9; then
     PID=""
-    if command -v lsof >/dev/null 2>&1; then
+    if command -v lsof &>/dev/null; then
         PID=$(lsof -t "$LOCKFILE" 2>/dev/null | grep -v "^$$\$" | head -n1)
-    elif command -v fuser >/dev/null 2>&1; then
+    elif command -v fuser &>/dev/null; then
         PID=$(fuser "$LOCKFILE" 2>/dev/null | tr ' ' '\n' | grep -v "^$$\$" | head -n1)
     fi
     
@@ -169,10 +169,10 @@ proceed_with_isp() {
 		rm -f /usr/local/mgr5/etc/ispmgr.lic /usr/local/mgr5/etc/ispmgr.lic.lock /usr/local/mgr5/var/.db.cache.* &>/dev/null
 
 		printf "\nRestarting ISP Manager\n"
-		if $ISP5_PANEL_FILE -m ispmgr -R >/dev/null 2>&1; then
+		if $ISP5_PANEL_FILE -m ispmgr -R &>/dev/null; then
 			sleep 5
 
-			if $MGRBIN -m ispmgr slaveserver >/dev/null 2>&1; then
+			if $MGRBIN -m ispmgr slaveserver &>/dev/null; then
 				PUSH_DNS_NEED=1
 			else
 				PUSH_DNS_NEED=0
@@ -200,7 +200,7 @@ proceed_without_isp() {
 	if ! [[ $REPLY =~ ^([Nn]|$'\xd1\x82'|$'\xd0\xa2')$ ]]; then
 	
 		printf "\n${GC}Current network settings:${NC}\n\n"
-		ip a
+		for i in /sys/class/net/*; do [[ -e "$i/device" || -d "$i/bridge" || -d "$i/bonding" ]] && ip addr show "$(basename "$i")"; done
 		echo
 		ip r
 
@@ -299,21 +299,21 @@ isp_manager_processing() {
                 # ISP Manager in SQLite
                 if [[ -f "$ISP5_LITE_MAIN_DB_FILE" ]]; then
 
-                    if ! which sqlite3; then apt update; apt -y install sqlite3 || yum -y install sqlite3; fi > /dev/null 2>&1
+                    if ! which sqlite3; then apt update; apt -y install sqlite3 || yum -y install sqlite3; fi &>/dev/null
 
-                    if which sqlite3 > /dev/null 2>&1; then
+                    if which sqlite3 &>/dev/null; then
 
                         printf "\n${GC}DB backup${NC} - ${BACKUP_DIR}/usr/local/mgr5/etc/ispmgr.db \n"
 
                         printf "\nUpdating db file (changing ${args[0]} with ${args[1]})\n"
 
-                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update webdomain_ipaddr set value='${args[1]}' where value='${args[0]}';"
-                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update emaildomain set ip='${args[1]}' where ip='${args[0]}';"
-                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update domain_auto set name=replace(name, '${args[0]}', '${args[1]}') where name like '%${args[0]}%';"
-                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update global_index set field_value='${args[1]}' where field_value='${args[0]}';"
-                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update db_server set host = '${args[1]}' || substr(host, instr(host, ':')) where host like '${args[0]}:%';"
-                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update db_mysql_servers set hostname = '${args[1]}' where hostname = '${args[0]}';"
-                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "delete from ipaddr where name='${args[0]}';"
+                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update webdomain_ipaddr set value='${args[1]}' where value='${args[0]}';" &>/dev/null
+                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update emaildomain set ip='${args[1]}' where ip='${args[0]}';" &>/dev/null
+                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update domain_auto set name=replace(name, '${args[0]}', '${args[1]}') where name like '%${args[0]}%';" &>/dev/null
+                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update global_index set field_value='${args[1]}' where field_value='${args[0]}';" &>/dev/null
+                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update db_server set host = '${args[1]}' || substr(host, instr(host, ':')) where host like '${args[0]}:%';" &>/dev/null
+                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "update db_mysql_servers set hostname = '${args[1]}' where hostname = '${args[0]}';" &>/dev/null
+                        sqlite3 $ISP5_LITE_MAIN_DB_FILE "delete from ipaddr where name='${args[0]}';" &>/dev/null
 
                         printf "\n${GC}Update completed${NC}\n"
 
@@ -412,9 +412,10 @@ if [[ ! $REPLY =~ ^([Nn]|$'\xd1\x82'|$'\xd0\xa2')$ ]]; then
 			else
 				isp_manager_processing
 		        fi
+		else
+	                sleep 2s
+        	        proceed_without_isp
 		fi
-                sleep 2s
-                proceed_without_isp
                 ;;
         esac
     else
